@@ -1,0 +1,18 @@
+# Fitness OptiMax - Core Dependencies
+# =====================================
+
+# Google Cloud & AI
+google-cloud-aiplatform>=1.70.0
+google-adk>=1.0.0
+google-auth>=2.35.0
+google-cloud-storage>=2.18.0
+google-cloud-firestore>=2.19.0
+
+# Web Framework
+flask>=3.1.0
+gunicorn>=23.0.0
+
+# Data & Utilities
+pydantic>=2.10.0
+python-dotenv>=1.0.1
+requests>=2.32.0

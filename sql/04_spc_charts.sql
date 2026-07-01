@@ -9,7 +9,7 @@ WITH moving_range AS (
     -- Moving Range: absolute difference between consecutive sessions
     ABS(total_weight - LAG(total_weight) OVER (
       PARTITION BY exercise_group ORDER BY session_rank
-    )) AS moving_range
+    )) AS mr_value
   FROM
     `gen-lang-client-0937519537.Optimmax.spc_rolling_averages`
 ),
@@ -17,7 +17,7 @@ control_limits AS (
   SELECT
     *,
     -- MR-bar: average moving range per exercise group
-    AVG(moving_range) OVER (PARTITION BY exercise_group) AS mr_bar,
+    AVG(mr_value) OVER (PARTITION BY exercise_group) AS mr_bar,
     -- Process mean (centre line)
     AVG(total_weight) OVER (PARTITION BY exercise_group) AS cl
   FROM moving_range

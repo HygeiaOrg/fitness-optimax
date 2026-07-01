@@ -9,7 +9,6 @@ WITH base_data AS (
     cal.calibrated_rpe,
     cal.rpe_confidence,
     plat.is_plateau,
-    plat.rotation_suggestion,
     COALESCE(tg.training_goal, 'HYPERTROPHY') AS training_goal
   FROM
     `gen-lang-client-0937519537.Optimmax.spc_charts` c
@@ -164,7 +163,7 @@ SELECT
   
   -- Master Message Output
   CASE
-    WHEN is_plateau = TRUE THEN CONCAT('Plateau detected! Consider switching to: ', COALESCE(rotation_suggestion, 'a variation.'))
+    WHEN is_plateau = TRUE THEN 'Plateau detected! Consider switching to a variation.'
     WHEN logic_decision = 'INCREASE_LOAD' THEN 'Great capacity! Increase load by 5-10%.'
     WHEN logic_decision = 'SLIGHT_INCREASE' THEN 'Room for overload. Increase load by 2.5-5%.'
     WHEN logic_decision = 'MICRO_INCREASE' THEN 'Failed with volume. Micro increase 1-2.5%.'

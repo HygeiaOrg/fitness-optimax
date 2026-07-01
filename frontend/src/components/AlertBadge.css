@@ -1,0 +1,60 @@
+.alert-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.alert-badge--compact {
+  padding: 2px 8px;
+  font-size: 0.65rem;
+}
+
+/* Burgundy — primary increase */
+.alert-badge--burgundy {
+  background: var(--burgundy-faint);
+  color: var(--burgundy);
+}
+
+/* Burgundy light — slight increase */
+.alert-badge--burgundy-light {
+  background: rgba(155, 77, 94, 0.08);
+  color: var(--burgundy-light);
+}
+
+/* Burgundy faint — micro increase */
+.alert-badge--burgundy-faint {
+  background: rgba(155, 77, 94, 0.05);
+  color: var(--burgundy-light);
+}
+
+/* Neutral — maintain */
+.alert-badge--neutral {
+  background: var(--border-light);
+  color: var(--text-secondary);
+}
+
+/* Gold — nudge adjustments */
+.alert-badge--gold {
+  background: var(--gold-faint);
+  color: var(--gold-dark);
+}
+
+/* Danger — rotation or review */
+.alert-badge--danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* Golden cross — animated glow */
+.alert-badge--golden {
+  background: linear-gradient(135deg, var(--gold-faint), rgba(255, 182, 18, 0.2));
+  color: var(--gold-dark);
+  animation: goldenGlow 2s ease-in-out infinite;
+  border: 1px solid rgba(255, 182, 18, 0.3);
+}

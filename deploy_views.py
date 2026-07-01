@@ -51,7 +51,7 @@ def execute_sql_file(client, filepath):
     sql = filepath.read_text()
 
     # Split on semicolons for files with multiple statements (config tables)
-    statements = [s.strip() for s in sql.split(";") if s.strip() and not s.strip().startswith("--")]
+    statements = [s.strip() for s in sql.split(";") if s.strip()]
 
     for i, statement in enumerate(statements):
         try:

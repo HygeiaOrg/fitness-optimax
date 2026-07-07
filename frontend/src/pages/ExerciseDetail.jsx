@@ -80,27 +80,44 @@ export default function ExerciseDetail() {
 
         {!loading && !error && chartData && (
           <>
-            <SummaryStats 
-              stats={{
-                rollingAvg: targetData?.rolling_avg_5 || null,
-                rpeAvg: targetData?.rpe_avg_3 || null,
-                totalSessions: chartData.sessions.length
-              }} 
-            />
-
-            <SPCChart data={chartData} />
-
-            {targetData && (
-              <div className="exercise-insight-card">
-                <div className="insight-header">
-                  <AlertBadge alertType={targetData.alert_type} />
-                  {targetData.goal_aligned && <span className="insight-aligned">✓ Goal Aligned</span>}
+            {chartData.sessions.length === 0 ? (
+              <div className="empty-state animate-fade-in" style={{ marginTop: 'var(--space-2xl)' }}>
+                <div className="empty-state-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line>
+                  </svg>
                 </div>
-                <h3 className="insight-message">{targetData.alert_message}</h3>
-                <p className="insight-target">
-                  Target: <strong>{targetData.target_weight_per_rep.toFixed(1)} kg</strong> for {targetData.target_sets} × {targetData.target_reps}
-                </p>
+                <h2>No Session History</h2>
+                <p>We don't have enough data to chart your performance yet. Log your first session to begin tracking.</p>
+                <button className="primary-button cta-button" onClick={() => alert('Data Entry Flow coming soon!')}>
+                  Log First Workout
+                </button>
               </div>
+            ) : (
+              <>
+                <SummaryStats 
+                  stats={{
+                    rollingAvg: targetData?.rolling_avg_5 || null,
+                    rpeAvg: targetData?.rpe_avg_3 || null,
+                    totalSessions: chartData.sessions.length
+                  }} 
+                />
+
+                <SPCChart data={chartData} />
+
+                {targetData && (
+                  <div className="exercise-insight-card">
+                    <div className="insight-header">
+                      <AlertBadge alertType={targetData.alert_type} />
+                      {targetData.goal_aligned && <span className="insight-aligned">✓ Goal Aligned</span>}
+                    </div>
+                    <h3 className="insight-message">{targetData.alert_message}</h3>
+                    <p className="insight-target">
+                      Target: <strong>{targetData.target_weight_per_rep.toFixed(1)} kg</strong> for {targetData.target_sets} × {targetData.target_reps}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}

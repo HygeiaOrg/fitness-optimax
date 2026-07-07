@@ -14,9 +14,9 @@
 }
 
 .target-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-card-hover);
-  border-color: var(--burgundy-faint);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 24px -8px rgba(119, 49, 65, 0.25), 0 4px 8px -4px rgba(119, 49, 65, 0.1);
+  border-color: rgba(119, 49, 65, 0.3);
   background: var(--bg-hover);
 }
 

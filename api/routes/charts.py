@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from api.dependencies import get_bq_client
 from api.services.bq_client import BQClient
 from api.models import ChartResponse, ControlLimits, SessionPoint
+from google.cloud import bigquery
 
 router = APIRouter()
 
@@ -28,9 +29,9 @@ def get_spc_chart(exercise_group: str, bq: BQClient = Depends(get_bq_client)):
     ORDER BY session_rank ASC
     """
     
-    job_config = bq.client.query_modules.QueryJobConfig(
+    job_config = bigquery.QueryJobConfig(
         query_parameters=[
-            bq.client.query_modules.ScalarQueryParameter("exercise_group", "STRING", exercise_group)
+            bigquery.ScalarQueryParameter("exercise_group", "STRING", exercise_group)
         ]
     )
     

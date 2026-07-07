@@ -28,8 +28,7 @@ export default function SPCChart({ data }) {
     }
     if (s.momentum_signal === 'GOLDEN_CROSS') {
       goldenCrossPoints.push({
-        coord: [i, s.total_weight],
-        value: s.total_weight,
+        value: [i, s.total_weight],
         name: 'Golden Cross'
       })
     }
@@ -114,15 +113,28 @@ export default function SPCChart({ data }) {
               itemStyle: { color: '#DC2626' },
               symbol: 'circle',
               symbolSize: 12
-            })),
-            ...goldenCrossPoints.map(p => ({
-              ...p,
-              itemStyle: { color: '#FFB612', shadowBlur: 10, shadowColor: 'rgba(255, 182, 18, 0.8)' },
-              symbol: 'circle',
-              symbolSize: 16
             }))
           ]
         }
+      },
+      {
+        name: 'Golden Cross Pulse',
+        type: 'effectScatter',
+        coordinateSystem: 'cartesian2d',
+        data: goldenCrossPoints,
+        symbolSize: 14,
+        showEffectOn: 'render',
+        rippleEffect: {
+          brushType: 'stroke',
+          scale: 4,
+          period: 4
+        },
+        itemStyle: {
+          color: '#FFB612',
+          shadowBlur: 10,
+          shadowColor: 'rgba(255, 182, 18, 0.8)'
+        },
+        zlevel: 1
       },
       {
         name: 'MA3',

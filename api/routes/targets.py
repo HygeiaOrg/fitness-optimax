@@ -3,6 +3,7 @@ from typing import List
 from api.dependencies import get_bq_client
 from api.services.bq_client import BQClient
 from api.models import TargetResponse
+from google.cloud import bigquery
 
 router = APIRouter()
 

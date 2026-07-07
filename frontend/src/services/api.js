@@ -3,7 +3,7 @@
  * Uses native Fetch API — no external HTTP library needed.
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
+const API_BASE = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_BASE || 'http://localhost:8000');
 
 /**
  * Fetch all workout targets (Dashboard view).

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import SummaryStats from '../components/SummaryStats'
 import SPCChart from '../components/SPCChart'
@@ -10,6 +10,7 @@ import './ExerciseDetail.css'
 
 export default function ExerciseDetail() {
   const { group } = useParams()
+  const navigate = useNavigate()
   const decodedGroup = decodeURIComponent(group)
   
   const [chartData, setChartData] = useState(null)
@@ -89,7 +90,7 @@ export default function ExerciseDetail() {
                 </div>
                 <h2>No Session History</h2>
                 <p>We don't have enough data to chart your performance yet. Log your first session to begin tracking.</p>
-                <button className="primary-button cta-button" onClick={() => alert('Data Entry Flow coming soon!')}>
+                <button className="primary-button cta-button" onClick={() => navigate('/log')}>
                   Log First Workout
                 </button>
               </div>

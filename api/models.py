@@ -59,3 +59,18 @@ class UpdateGoalResponse(BaseModel):
     message: str
     exercise_group: str
     training_goal: str
+
+# -----------------
+# Workout Endpoints
+# -----------------
+class LogWorkoutRequest(BaseModel):
+    athlete_name: str
+    exercise_group: str
+    sets: int
+    total_reps: int
+    total_weight: float
+    rpe: int
+
+class LogWorkoutResponse(BaseModel):
+    message: str
+    workout_id: Optional[str] = None

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import TargetCard from '../components/TargetCard'
 import { fetchTargets } from '../services/api'
 import './Dashboard.css'
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const [targets, setTargets] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -58,16 +60,28 @@ export default function Dashboard() {
                 </div>
                 <h2>Awaiting Data</h2>
                 <p>No workout targets found. Complete a session to generate insights.</p>
-                <button className="primary-button cta-button" onClick={() => alert('Data Entry Flow coming soon!')}>
+                <button className="primary-button cta-button" onClick={() => navigate('/log')}>
                   Log First Workout
                 </button>
               </div>
             ) : (
-              <div className="target-grid">
-                {targets.map(target => (
-                  <TargetCard key={target.exercise_group} target={target} />
-                ))}
-              </div>
+              <>
+                <div className="target-grid">
+                  {targets.map(target => (
+                    <TargetCard key={target.exercise_group} target={target} />
+                  ))}
+                </div>
+                <button 
+                  className="fab-button"
+                  onClick={() => navigate('/log')}
+                  title="Log Workout"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
+              </>
             )}
           </>
         )}

@@ -20,6 +20,7 @@ SQL_DIR = Path(__file__).parent / "sql"
 
 # Ordered list of SQL files to execute
 SQL_FILES = [
+    "00_native_workouts_table.sql",
     "01_stg_workouts.sql",
     "02_workout_metrics.sql",
     "03_spc_rolling_averages.sql",

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routes import targets, charts, config
+from api.routes import targets, charts, config, workouts
 
 app = FastAPI(
     title="Fitness OptiMax API",
@@ -21,6 +21,7 @@ app.add_middleware(
 app.include_router(targets.router, prefix="/api/targets", tags=["Targets"])
 app.include_router(charts.router, prefix="/api/charts", tags=["Charts"])
 app.include_router(config.router, prefix="/api/goals", tags=["Configuration"])
+app.include_router(workouts.router, prefix="/api/workouts", tags=["Workouts"])
 
 @app.get("/")
 def root():

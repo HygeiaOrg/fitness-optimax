@@ -30,15 +30,35 @@ export async function fetchChartData(exerciseGroup) {
  * Update training goal for an exercise group.
  * POST /api/goals
  */
-export async function updateTrainingGoal(exerciseGroup, trainingGoal) {
-  const res = await fetch(`${API_BASE}/api/goals`, {
+export async function updateTrainingGoal(exerciseGroup, newGoal) {
+  const response = await fetch(`${API_BASE}/api/goals`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify({
       exercise_group: exerciseGroup,
-      training_goal: trainingGoal,
-    }),
-  });
-  if (!res.ok) throw new Error(`Failed to update goal: ${res.status}`);
-  return res.json();
+      training_goal: newGoal
+    })
+  })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error(err.detail || 'Failed to update training goal')
+  }
+  return response.json()
+}
+
+export async function logWorkout(workoutData) {
+  const response = await fetch(`${API_BASE}/api/workouts`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(workoutData)
+  })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error(err.detail || 'Failed to log workout')
+  }
+  return response.json()
 }

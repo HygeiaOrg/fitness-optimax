@@ -72,6 +72,31 @@
   margin-bottom: var(--space-sm);
 }
 
+.fab-button {
+  position: fixed;
+  bottom: var(--space-2xl);
+  right: var(--space-2xl);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--burgundy);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(119, 49, 65, 0.4);
+  cursor: pointer;
+  z-index: 100;
+  transition: all 0.3s ease;
+  border: 2px solid var(--primary);
+}
+
+.fab-button:hover {
+  transform: scale(1.05) translateY(-2px);
+  background: var(--burgundy-light);
+  box-shadow: 0 8px 25px rgba(255, 182, 18, 0.3);
+}
+
 @media (max-width: 768px) {
   .dashboard-main {
     padding: var(--space-xl) var(--space-md);

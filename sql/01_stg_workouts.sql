@@ -15,4 +15,18 @@ SELECT
 FROM
   `gen-lang-client-0937519537.Optimmax.Fitness OptiMax`
 WHERE
-  string_field_0 != 'Timestamp';
+  string_field_0 != 'Timestamp'
+
+UNION ALL
+
+SELECT
+  workout_timestamp,
+  workout_date,
+  athlete_name,
+  exercise_group,
+  sets,
+  total_reps,
+  total_weight,
+  rpe
+FROM
+  `gen-lang-client-0937519537.Optimmax.native_workouts`;

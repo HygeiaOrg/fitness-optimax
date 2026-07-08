@@ -7,7 +7,7 @@ from google.cloud import bigquery
 
 router = APIRouter()
 
-@router.get("/", response_model=List[TargetResponse])
+@router.get("", response_model=List[TargetResponse])
 def get_workout_targets(bq: BQClient = Depends(get_bq_client)):
     """
     Fetch the most recent, actionable progressive overload targets for every exercise group.

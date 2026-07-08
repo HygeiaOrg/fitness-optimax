@@ -6,7 +6,7 @@ from google.cloud import bigquery
 
 router = APIRouter()
 
-@router.post("/", response_model=UpdateGoalResponse)
+@router.post("", response_model=UpdateGoalResponse)
 def update_training_goal(payload: UpdateGoalRequest, bq: BQClient = Depends(get_bq_client)):
     """
     Update the user's declared training goal (STRENGTH or HYPERTROPHY) 

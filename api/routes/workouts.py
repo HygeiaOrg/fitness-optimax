@@ -6,7 +6,7 @@ from google.cloud import bigquery
 
 router = APIRouter()
 
-@router.post("/", response_model=LogWorkoutResponse)
+@router.post("", response_model=LogWorkoutResponse)
 def log_workout(payload: LogWorkoutRequest, bq: BQClient = Depends(get_bq_client)):
     """
     Log a new workout session into the native_workouts BigQuery table.

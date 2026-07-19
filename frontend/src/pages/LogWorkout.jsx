@@ -4,6 +4,24 @@ import Header from '../components/Header'
 import { logWorkout } from '../services/api'
 import './LogWorkout.css'
 
+const EXERCISE_GROUPS = [
+  'Upper Body',
+  'Lower Body',
+  'Push',
+  'Pull',
+  'Legs',
+  'Back',
+  'Chest',
+  'Shoulders',
+  'Arms',
+  'Core',
+  'Lat',
+  'Deadlift',
+  'Squat',
+  'Cardio',
+  'Full Body',
+]
+
 export default function LogWorkout() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
@@ -69,15 +87,19 @@ export default function LogWorkout() {
           
           <div className="form-group">
             <label htmlFor="exercise_group">Exercise Group</label>
-            <input 
-              type="text" 
-              id="exercise_group" 
-              name="exercise_group" 
-              placeholder="e.g. Upper Body, Chest"
+            <select
+              id="exercise_group"
+              name="exercise_group"
               value={formData.exercise_group}
               onChange={handleChange}
               required
-            />
+              className="form-select"
+            >
+              <option value="" disabled>Select a workout type…</option>
+              {EXERCISE_GROUPS.map(group => (
+                <option key={group} value={group}>{group}</option>
+              ))}
+            </select>
           </div>
           
           <div className="form-row">
@@ -88,7 +110,7 @@ export default function LogWorkout() {
                 id="sets" 
                 name="sets" 
                 min="1"
-                placeholder="e.g. 3"
+                placeholder="e.g. 4"
                 value={formData.sets}
                 onChange={handleChange}
                 required
@@ -96,17 +118,25 @@ export default function LogWorkout() {
             </div>
             
             <div className="form-group">
-              <label htmlFor="total_reps">Total Reps</label>
+              <label htmlFor="total_reps">
+                Total Reps
+                <span className="label-hint"> (all sets combined)</span>
+              </label>
               <input 
                 type="number" 
                 id="total_reps" 
                 name="total_reps" 
                 min="1"
-                placeholder="e.g. 24"
+                placeholder="e.g. 32"
                 value={formData.total_reps}
                 onChange={handleChange}
                 required
               />
+              {formData.sets && formData.total_reps && (
+                <small className="form-help reps-hint">
+                  ≈ {Math.round(parseInt(formData.total_reps) / parseInt(formData.sets))} reps per set
+                </small>
+              )}
             </div>
           </div>
           

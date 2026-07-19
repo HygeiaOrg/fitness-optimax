@@ -72,30 +72,66 @@
   margin-bottom: var(--space-sm);
 }
 
-.fab-button {
-  position: fixed;
-  bottom: var(--space-2xl);
-  right: var(--space-2xl);
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--burgundy);
-  color: #fff;
+
+/* ── Top Action Bar ───────────────────────────────────────── */
+.dashboard-top-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 20px rgba(119, 49, 65, 0.4);
-  cursor: pointer;
-  z-index: 100;
-  transition: all 0.3s ease;
-  border: 2px solid var(--primary);
+  justify-content: space-between;
+  margin-bottom: var(--space-xl);
+  gap: var(--space-md);
 }
 
-.fab-button:hover {
-  transform: scale(1.05) translateY(-2px);
-  background: var(--burgundy-light);
-  box-shadow: 0 8px 25px rgba(255, 182, 18, 0.3);
+.dashboard-top-bar-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
+
+.dashboard-top-bar-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.dashboard-top-bar-count {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  min-height: 1.6rem;
+}
+
+.log-workout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: 30px;
+  background: linear-gradient(135deg, var(--burgundy) 0%, #b31025 100%);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(119, 49, 65, 0.35);
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.log-workout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(119, 49, 65, 0.5);
+  background: linear-gradient(135deg, var(--burgundy-light, #922) 0%, #c8192e 100%);
+}
+
+.log-workout-btn:active {
+  transform: translateY(0);
+}
+
 
 @media (max-width: 768px) {
   .dashboard-main {

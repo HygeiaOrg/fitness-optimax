@@ -36,9 +36,19 @@ export default function TargetCard({ target }) {
           <span className="metric">{target_weight_per_rep.toFixed(1)}</span>
           <span className="label">kg/rep</span>
         </div>
-        
+
         <div className="target-card-reps">
-          {target_sets} sets &times; {target_reps} reps
+          <div className="reps-primary">
+            <span className="reps-sets">{target_sets} sets</span>
+            <span className="reps-sep">&times;</span>
+            <span className="reps-count">
+              {Math.round(target_reps / target_sets)}
+              <span className="reps-unit"> reps/set</span>
+            </span>
+          </div>
+          <div className="reps-total">
+            {target_reps} total reps
+          </div>
         </div>
       </div>
 

@@ -106,27 +106,63 @@ def main():
     print(f"SQL Dir: {SQL_DIR}")
     print()
 
+    # Non-interactive by default: keep going after a failure and report a
+    # summary at the end. A partial deployment used to be easy to miss, which
+    # is how the dashboard ended up querying a view that was never created.
+    interactive = "--interactive" in sys.argv and sys.stdin.isatty()
+
     client = get_client()
     print("✅ BigQuery client authenticated.\n")
+
+    failures = []
 
     for filename in SQL_FILES:
         filepath = SQL_DIR / filename
         if not filepath.exists():
             print(f"⚠️  Skipping {filename} (file not found)")
+            failures.append((filename, "file not found"))
             continue
 
         print(f"🔧 Deploying {filename}...")
         try:
             execute_sql_file(client, filepath)
-            print(f"   ✅ Done.\n")
+            print("   ✅ Done.\n")
         except Exception as e:
             print(f"   ❌ FAILED: {e}\n")
-            user_input = input("   Continue? (y/n): ").strip().lower()
-            if user_input != "y":
-                print("Deployment aborted.")
-                sys.exit(1)
+            failures.append((filename, str(e).split("\n")[0]))
+            if interactive:
+                try:
+                    if input("   Continue? (y/n): ").strip().lower() != "y":
+                        print("Deployment aborted.")
+                        sys.exit(1)
+                except EOFError:
+                    pass
 
     print("=" * 60)
+    if failures:
+        print(f"❌ Deployment INCOMPLETE — {len(failures)} of {len(SQL_FILES)} layers failed:")
+        for filename, reason in failures:
+            print(f"   • {filename}: {reason}")
+        print()
+        print("Later layers build on earlier ones, so fix the FIRST failure above;")
+        print("the rest usually follow from it.")
+        print("=" * 60)
+        sys.exit(1)
+
+    # The dashboard reads this one view. Confirm it actually exists and
+    # answers, rather than assuming the CREATE statements worked.
+    print("🔎 Verifying `workout_targets` (the view the dashboard reads)...")
+    try:
+        rows = list(
+            client.query(
+                f"SELECT COUNT(*) AS n FROM `{PROJECT_ID}.Optimmax.workout_targets`"
+            ).result()
+        )
+        print(f"   ✅ workout_targets is queryable — {rows[0].n} exercise groups.\n")
+    except Exception as e:
+        print(f"   ❌ workout_targets is NOT queryable: {e}\n")
+        sys.exit(1)
+
     print("🎉 Deployment complete!")
     print()
     print("Validation queries you can run:")

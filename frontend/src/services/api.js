@@ -5,14 +5,48 @@
 
 const API_BASE = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_BASE || 'http://localhost:8000');
 
+export const DIAGNOSTICS_URL = `${API_BASE}/api/diagnostics`;
+
+/**
+ * Turn a failed response into an Error carrying the backend's explanation.
+ * The API always answers with { detail, code, hint } — showing only the status
+ * code (the old behaviour) made failures impossible to diagnose from the UI.
+ */
+async function toError(res, fallback) {
+  let body = null;
+  try {
+    body = await res.json();
+  } catch {
+    // Non-JSON body (proxy error page, timeout). Fall through to the status.
+  }
+
+  const detail = body?.detail || `${fallback} (HTTP ${res.status})`;
+  const error = new Error(detail);
+  error.status = res.status;
+  error.code = body?.code;
+  error.hint = body?.hint;
+  return error;
+}
+
+async function request(path, options) {
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, options);
+  } catch (networkError) {
+    const error = new Error(`Cannot reach the API: ${networkError.message}`);
+    error.code = 'network';
+    throw error;
+  }
+  if (!res.ok) throw await toError(res, `Request to ${path} failed`);
+  return res.json();
+}
+
 /**
  * Fetch all workout targets (Dashboard view).
  * GET /api/targets
  */
 export async function fetchTargets() {
-  const res = await fetch(`${API_BASE}/api/targets`);
-  if (!res.ok) throw new Error(`Failed to fetch targets: ${res.status}`);
-  return res.json();
+  return request('/api/targets');
 }
 
 /**
@@ -20,10 +54,7 @@ export async function fetchTargets() {
  * GET /api/charts/:exerciseGroup
  */
 export async function fetchChartData(exerciseGroup) {
-  const encoded = encodeURIComponent(exerciseGroup);
-  const res = await fetch(`${API_BASE}/api/charts/${encoded}`);
-  if (!res.ok) throw new Error(`Failed to fetch chart data: ${res.status}`);
-  return res.json();
+  return request(`/api/charts/${encodeURIComponent(exerciseGroup)}`);
 }
 
 /**
@@ -31,34 +62,29 @@ export async function fetchChartData(exerciseGroup) {
  * POST /api/goals
  */
 export async function updateTrainingGoal(exerciseGroup, newGoal) {
-  const response = await fetch(`${API_BASE}/api/goals`, {
+  return request('/api/goals', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      exercise_group: exerciseGroup,
-      training_goal: newGoal
-    })
-  })
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}))
-    throw new Error(err.detail || 'Failed to update training goal')
-  }
-  return response.json()
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ exercise_group: exerciseGroup, training_goal: newGoal })
+  });
 }
 
+/**
+ * Log a workout session.
+ * POST /api/workouts
+ */
 export async function logWorkout(workoutData) {
-  const response = await fetch(`${API_BASE}/api/workouts`, {
+  return request('/api/workouts', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(workoutData)
-  })
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}))
-    throw new Error(err.detail || 'Failed to log workout')
-  }
-  return response.json()
+  });
+}
+
+/**
+ * Probe every layer of the BigQuery pipeline.
+ * GET /api/diagnostics
+ */
+export async function fetchDiagnostics() {
+  return request('/api/diagnostics');
 }

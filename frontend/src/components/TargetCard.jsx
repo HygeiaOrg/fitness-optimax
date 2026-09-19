@@ -16,7 +16,17 @@ export default function TargetCard({ target }) {
 
   // Optional: Add momentum check here if available in TargetResponse, 
   // or default to alert_type to handle 'GOLDEN_CROSS' logic inside AlertBadge.
-  const momentum = null 
+  const momentum = null
+
+  // A brand-new exercise group has no history yet, so any of these can be null.
+  // Calling .toFixed() on null used to blank the whole page.
+  const isNumber = (value) => typeof value === 'number' && Number.isFinite(value)
+  const weightPerRep = isNumber(target_weight_per_rep) ? target_weight_per_rep.toFixed(1) : '—'
+  const sets = isNumber(target_sets) ? target_sets : '—'
+  const totalReps = isNumber(target_reps) ? target_reps : null
+  const repsPerSet = isNumber(target_reps) && isNumber(target_sets) && target_sets > 0
+    ? Math.round(target_reps / target_sets)
+    : '—'
 
   return (
     <Link to={`/exercise/${encodeURIComponent(exercise_group)}`} className="target-card">
@@ -33,21 +43,21 @@ export default function TargetCard({ target }) {
 
       <div className="target-card-body">
         <div className="target-card-metric">
-          <span className="metric">{target_weight_per_rep.toFixed(1)}</span>
+          <span className="metric">{weightPerRep}</span>
           <span className="label">kg/rep</span>
         </div>
 
         <div className="target-card-reps">
           <div className="reps-primary">
-            <span className="reps-sets">{target_sets} sets</span>
+            <span className="reps-sets">{sets} sets</span>
             <span className="reps-sep">&times;</span>
             <span className="reps-count">
-              {Math.round(target_reps / target_sets)}
+              {repsPerSet}
               <span className="reps-unit"> reps/set</span>
             </span>
           </div>
           <div className="reps-total">
-            {target_reps} total reps
+            {totalReps === null ? 'Awaiting first session' : `${totalReps} total reps`}
           </div>
         </div>
       </div>

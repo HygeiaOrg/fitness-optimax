@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import TargetCard from '../components/TargetCard'
-import { fetchTargets } from '../services/api'
+import { DIAGNOSTICS_URL, fetchTargets } from '../services/api'
 import './Dashboard.css'
 
 export default function Dashboard() {
@@ -11,19 +11,23 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    async function loadTargets() {
-      try {
-        const data = await fetchTargets()
-        setTargets(data)
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
+  const loadTargets = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await fetchTargets()
+      setTargets(data)
+    } catch (err) {
+      // Keep the backend's explanation (and remediation hint) intact.
+      setError({ message: err.message, hint: err.hint })
+    } finally {
+      setLoading(false)
     }
-    loadTargets()
   }, [])
+
+  useEffect(() => {
+    loadTargets()
+  }, [loadTargets])
 
   return (
     <div className="dashboard-page animate-fade-in">
@@ -64,7 +68,14 @@ export default function Dashboard() {
         {error && (
           <div className="error-state">
             <h3>Failed to load targets</h3>
-            <p>{error}</p>
+            <p className="error-detail">{error.message}</p>
+            {error.hint && <p className="error-hint">{error.hint}</p>}
+            <div className="error-actions">
+              <button className="log-workout-btn" onClick={loadTargets}>Try again</button>
+              <a className="error-link" href={DIAGNOSTICS_URL} target="_blank" rel="noreferrer">
+                Run diagnostics
+              </a>
+            </div>
           </div>
         )}
 

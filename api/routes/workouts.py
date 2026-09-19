@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from api.dependencies import get_bq_client
 from api.services.bq_client import BQClient
 from api.models import LogWorkoutRequest, LogWorkoutResponse
@@ -11,8 +11,8 @@ def log_workout(payload: LogWorkoutRequest, bq: BQClient = Depends(get_bq_client
     """
     Log a new workout session into the native_workouts BigQuery table.
     """
-    query = """
-      INSERT INTO `gen-lang-client-0937519537.Optimmax.native_workouts` 
+    query = f"""
+      INSERT INTO `{bq.project_id}.{bq.dataset}.native_workouts` 
       (workout_timestamp, workout_date, athlete_name, exercise_group, sets, total_reps, total_weight, rpe)
       VALUES (CURRENT_TIMESTAMP(), CURRENT_DATE(), @athlete_name, @exercise_group, @sets, @total_reps, @total_weight, @rpe)
     """
@@ -28,10 +28,7 @@ def log_workout(payload: LogWorkoutRequest, bq: BQClient = Depends(get_bq_client
         ]
     )
     
-    try:
-        bq.client.query(query, job_config=job_config).result()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to insert workout: {str(e)}")
+    bq.query(query, job_config=job_config)
         
     return LogWorkoutResponse(
         message="Workout logged successfully",

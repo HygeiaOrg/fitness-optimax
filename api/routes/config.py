@@ -16,8 +16,8 @@ def update_training_goal(payload: UpdateGoalRequest, bq: BQClient = Depends(get_
         raise HTTPException(status_code=400, detail="training_goal must be 'STRENGTH' or 'HYPERTROPHY'")
         
     # We use MERGE to either update if it exists or insert if it doesn't
-    query = """
-    MERGE `gen-lang-client-0937519537.Optimmax.training_goals` T
+    query = f"""
+    MERGE `{bq.project_id}.{bq.dataset}.training_goals` T
     USING (SELECT @exercise_group AS exercise_group, @training_goal AS training_goal) S
     ON T.exercise_group = S.exercise_group
     WHEN MATCHED THEN
@@ -34,7 +34,7 @@ def update_training_goal(payload: UpdateGoalRequest, bq: BQClient = Depends(get_
         ]
     )
     
-    bq.client.query(query, job_config=job_config).result()
+    bq.query(query, job_config=job_config)
     
     return UpdateGoalResponse(
         message="Goal updated successfully",

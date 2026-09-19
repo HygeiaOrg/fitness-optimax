@@ -143,17 +143,19 @@ final_calc AS (
     (days_since_last_session > 14) AS staleness_alert
   FROM targets_calc
 )
+-- The API reads these columns directly, so NULLs are coalesced away here:
+-- `is_plateau` arrives via a LEFT JOIN and `avg_reps_per_set` divides by sets.
 SELECT
   exercise_group,
-  training_goal,
+  COALESCE(training_goal, 'HYPERTROPHY') AS training_goal,
   workout_date AS last_session_date,
   days_since_last_session,
-  staleness_alert,
+  COALESCE(staleness_alert, FALSE) AS staleness_alert,
   total_weight AS last_total_weight,
   rolling_avg_5,
-  avg_reps_per_set AS last_avg_reps_per_set,
+  COALESCE(avg_reps_per_set, 0) AS last_avg_reps_per_set,
   rpe_avg_3,
-  is_plateau,
+  COALESCE(is_plateau, FALSE) AS is_plateau,
   
   -- Master Alert Output
   CASE
@@ -174,9 +176,9 @@ SELECT
     ELSE 'Maintain optimal training stimulus.'
   END AS alert_message,
   
-  goal_aligned,
+  COALESCE(goal_aligned, TRUE) AS goal_aligned,
   target_total_weight,
-  target_sets,
-  target_reps,
+  CAST(target_sets AS INT64) AS target_sets,
+  CAST(target_reps AS INT64) AS target_reps,
   target_weight_per_rep
 FROM final_calc;

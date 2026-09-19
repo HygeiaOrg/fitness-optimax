@@ -142,3 +142,40 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Error State Detail ───────────────────────────────────── */
+.error-state .error-detail {
+  max-width: 48ch;
+  color: var(--text-secondary, #9a9a9a);
+  word-break: break-word;
+}
+
+.error-state .error-hint {
+  max-width: 52ch;
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.error-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.error-link {
+  color: var(--text-secondary, #9a9a9a);
+  font-size: 0.875rem;
+  text-decoration: underline;
+}
+
+.error-link:hover {
+  color: var(--text-primary, #fff);
+}

@@ -10,6 +10,8 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+import google.auth
+import google.auth.exceptions
 from google.cloud import bigquery
 from google.oauth2.credentials import Credentials
 
@@ -34,15 +36,43 @@ SQL_FILES = [
 
 
 def get_client():
-    """Create a BigQuery client using gcloud access token."""
-    env = os.environ.copy()
-    result = subprocess.run(
-        ["gcloud", "auth", "print-access-token", "--quiet"],
-        capture_output=True, text=True, stdin=subprocess.DEVNULL, env=env
-    )
+    """Create a BigQuery client.
+
+    Tries Application Default Credentials first (`gcloud auth application-default
+    login`, a service account key in GOOGLE_APPLICATION_CREDENTIALS, or the
+    metadata server) and only falls back to shelling out to the gcloud binary.
+    That way the script still works on a machine where the gcloud CLI is not
+    installed but credentials are available.
+    """
+    try:
+        credentials, _ = google.auth.default(
+            scopes=["https://www.googleapis.com/auth/bigquery"]
+        )
+        print("Auth: Application Default Credentials")
+        return bigquery.Client(project=PROJECT_ID, credentials=credentials)
+    except google.auth.exceptions.DefaultCredentialsError:
+        pass
+
+    try:
+        result = subprocess.run(
+            ["gcloud", "auth", "print-access-token", "--quiet"],
+            capture_output=True, text=True, stdin=subprocess.DEVNULL,
+            env=os.environ.copy(),
+        )
+    except FileNotFoundError:
+        print(
+            "ERROR: no credentials found.\n"
+            "  Either install the Google Cloud CLI and run:\n"
+            "      gcloud auth application-default login\n"
+            "  or point GOOGLE_APPLICATION_CREDENTIALS at a service account key file."
+        )
+        sys.exit(1)
+
     if result.returncode != 0:
         print(f"Error getting gcloud token: {result.stderr}")
         sys.exit(1)
+
+    print("Auth: gcloud access token")
     credentials = Credentials(result.stdout.strip())
     return bigquery.Client(project=PROJECT_ID, credentials=credentials)
 

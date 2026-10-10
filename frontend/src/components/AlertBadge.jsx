@@ -1,12 +1,12 @@
 import './AlertBadge.css'
 
 const ALERT_CONFIG = {
-  INCREASE_LOAD: { label: '↑ Increase', variant: 'burgundy' },
-  SLIGHT_INCREASE: { label: '↑ Slight', variant: 'burgundy-light' },
-  MICRO_INCREASE: { label: '↑ Micro', variant: 'burgundy-faint' },
+  INCREASE_LOAD: { label: '↑ Increase', variant: 'brand' },
+  SLIGHT_INCREASE: { label: '↑ Slight', variant: 'brand-light' },
+  MICRO_INCREASE: { label: '↑ Micro', variant: 'brand-faint' },
   MAINTAIN: { label: '→ Maintain', variant: 'neutral' },
-  NUDGE_REDUCE_REPS: { label: '⚡ Fewer reps', variant: 'gold' },
-  NUDGE_INCREASE_REPS: { label: '⚡ More reps', variant: 'gold' },
+  NUDGE_REDUCE_REPS: { label: '⚡ Fewer reps', variant: 'highlight' },
+  NUDGE_INCREASE_REPS: { label: '⚡ More reps', variant: 'highlight' },
   EXERCISE_ROTATION: { label: '🔄 Switch', variant: 'danger' },
   REVIEW_REQUIRED: { label: '⚠ Review', variant: 'danger' },
 }
@@ -17,7 +17,7 @@ export default function AlertBadge({ alertType, momentum, compact = false }) {
 
   if (isGolden) {
     return (
-      <span className={`alert-badge alert-badge--golden ${compact ? 'alert-badge--compact' : ''}`} id={`alert-${alertType}`}>
+      <span className={`alert-badge alert-badge--momentum ${compact ? 'alert-badge--compact' : ''}`} id={`alert-${alertType}`}>
         🔥 On Fire
       </span>
     )

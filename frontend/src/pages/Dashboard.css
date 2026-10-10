@@ -31,7 +31,7 @@
 }
 
 .empty-state-icon {
-  color: var(--primary);
+  color: var(--brand);
   margin-bottom: var(--space-lg);
   opacity: 0.8;
 }
@@ -53,18 +53,14 @@
 
 .cta-button {
   padding: var(--space-md) var(--space-2xl);
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  border-radius: 30px;
-  background: linear-gradient(135deg, var(--primary) 0%, #b31025 100%);
-  box-shadow: 0 4px 15px rgba(235, 17, 43, 0.3);
+  font-size: 1rem;
+  border-radius: var(--radius-sm);
   transition: all 0.3s ease;
 }
 
 .cta-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(235, 17, 43, 0.4);
+  box-shadow: 0 6px 20px var(--brand-glow);
 }
 
 .error-state h3 {
@@ -108,15 +104,17 @@
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-lg);
-  border-radius: 30px;
-  background: linear-gradient(135deg, var(--burgundy) 0%, #b31025 100%);
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  border-radius: var(--radius-sm);
+  background: var(--brand);
+  color: var(--text-inverse);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(119, 49, 65, 0.35);
+  box-shadow: 0 4px 14px var(--brand-faint);
   transition: all 0.25s ease;
   white-space: nowrap;
   flex-shrink: 0;
@@ -124,8 +122,8 @@
 
 .log-workout-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(119, 49, 65, 0.5);
-  background: linear-gradient(135deg, var(--burgundy-light, #922) 0%, #c8192e 100%);
+  box-shadow: 0 6px 20px var(--brand-glow);
+  background: var(--brand-light);
 }
 
 .log-workout-btn:active {
@@ -146,7 +144,7 @@
 /* ── Error State Detail ───────────────────────────────────── */
 .error-state .error-detail {
   max-width: 48ch;
-  color: var(--text-secondary, #9a9a9a);
+  color: var(--text-secondary);
   word-break: break-word;
 }
 
@@ -155,7 +153,7 @@
   margin-top: var(--space-md);
   padding: var(--space-md);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-surface);
   border: 1px solid var(--border);
   font-size: 0.875rem;
   line-height: 1.5;
@@ -171,11 +169,11 @@
 }
 
 .error-link {
-  color: var(--text-secondary, #9a9a9a);
+  color: var(--text-secondary);
   font-size: 0.875rem;
   text-decoration: underline;
 }
 
 .error-link:hover {
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
 }

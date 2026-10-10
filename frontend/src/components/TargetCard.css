@@ -15,8 +15,8 @@
 
 .target-card:hover {
   transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 12px 24px -8px rgba(119, 49, 65, 0.25), 0 4px 8px -4px rgba(119, 49, 65, 0.1);
-  border-color: rgba(119, 49, 65, 0.3);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--brand);
   background: var(--bg-hover);
 }
 
@@ -27,7 +27,7 @@
   left: 0;
   width: 4px;
   height: 100%;
-  background: var(--burgundy);
+  background: var(--brand);
   opacity: 0;
   transition: opacity var(--transition-base);
 }

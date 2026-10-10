@@ -4,7 +4,7 @@
 
 By analyzing historical workout data, Fitness OptiMax mathematically identifies whether your progressive overload is effectively driving adaptation (momentum signals, golden crosses) or if you are stagnating (plateaus).
 
-The application is themed around the Washington Commanders design language (burgundy, gold, and sleek dark mode).
+The application is themed for **North Tyneside Barbells**: dark mode in the club's black, white and blue (`#46BCFF`), Montserrat type (the open-source sibling of the club's Trueno typeface), and the club crest, used with the club's permission. Colour tokens live in `frontend/src/index.css`; the SPC chart mirrors them in `frontend/src/components/SPCChart.jsx`.
 
 ---
 

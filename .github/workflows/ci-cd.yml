@@ -1,0 +1,128 @@
+name: CI/CD
+
+# Pull requests: test + build.
+# Push to master: test + build, then deploy to Cloud Run (and redeploy the
+# BigQuery views if anything under sql/ changed).
+on:
+  pull_request:
+  push:
+    branches: [master]
+    paths-ignore:
+      - "**.md"
+      - "config/processed_programmes.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GCP_PROJECT: gen-lang-client-0937519537
+  GCP_REGION: europe-west2
+  SERVICE: fitness-optimax
+
+jobs:
+  backend:
+    name: API tests + exercise catalogue
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt httpx pytest openpyxl
+      - name: API smoke tests (stubbed BigQuery)
+        run: python tests/smoke_test_api.py
+      - name: Unit tests
+        run: pytest -q tests
+      - name: Validate exercise catalogue
+        run: python scripts/sync_exercises.py validate
+
+  frontend:
+    name: Frontend lint + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  deploy:
+    name: Deploy to Cloud Run
+    needs: [backend, frontend]
+    # Skips cleanly until scripts/setup_github_deploy.sh has set the GCP variables.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master' && vars.GCP_WIF_PROVIDER != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write   # keyless auth to Google Cloud (Workload Identity Federation)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+          create_credentials_file: true
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Redeploy BigQuery views if SQL changed
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          # Compare against the previous master tip for pushes (covers merge,
+          # squash, rebase and multi-commit pushes). Manual runs or a brand-new
+          # branch have no usable BEFORE, so redeploy the views to be safe;
+          # the SQL is idempotent.
+          if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] \
+             && git cat-file -e "$BEFORE^{commit}" 2>/dev/null \
+             && git diff --quiet "$BEFORE" HEAD -- sql/ deploy_views.py; then
+            echo "No SQL changes; skipping."
+          else
+            pip install -q -r requirements.txt
+            python deploy_views.py
+          fi
+
+      - name: Build and deploy
+        run: |
+          gcloud run deploy "$SERVICE" \
+            --source . \
+            --project "$GCP_PROJECT" \
+            --region "$GCP_REGION" \
+            --allow-unauthenticated \
+            --quiet
+
+      - name: Health check
+        run: |
+          URL=$(gcloud run services describe "$SERVICE" --project "$GCP_PROJECT" \
+                --region "$GCP_REGION" --format='value(status.url)')
+          echo "Deployed to $URL"
+          for i in 1 2 3 4 5; do
+            curl -fsS "$URL/api/health" && exit 0
+            sleep 10
+          done
+          echo "Health check failed" >&2
+          exit 1

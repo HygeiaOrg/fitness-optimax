@@ -1,0 +1,12 @@
+{
+  "_comment": "Programme spreadsheets in the Drive folder 'Olympic Weight Training' (id 101RqYj6wKzPffrbvTdSfQLi1G1_Za3ZB) already synced into frontend/src/data/exercises.json. Keyed by Drive file id; a file is re-checked if its modifiedTime is newer than the one recorded here.",
+  "folder_id": "101RqYj6wKzPffrbvTdSfQLi1G1_Za3ZB",
+  "files": {
+    "1DqsgBwzjMzli_wXcZ3jGfwyaGiBGknihtc1Sc1bAqyU": {
+      "title": "Olympic Lifting Programe September 26",
+      "modifiedTime": "2026-09-19T10:42:58.394Z",
+      "synced_at": "2026-10-12",
+      "added": []
+    }
+  }
+}

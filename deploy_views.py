@@ -34,7 +34,22 @@ SQL_FILES = [
 
 
 def get_client():
-    """Create a BigQuery client using gcloud access token."""
+    """Create a BigQuery client using gcloud access token.
+
+    In CI (GitHub Actions with Workload Identity Federation) use Application
+    Default Credentials with Drive scope as well, because 05a reads the
+    Google-Sheet-backed source table. The sheet must be shared with the
+    deployer service account.
+    """
+    if os.environ.get("CI") and os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        import google.auth
+
+        creds, _ = google.auth.default(scopes=[
+            "https://www.googleapis.com/auth/cloud-platform",
+            "https://www.googleapis.com/auth/drive.readonly",
+        ])
+        return bigquery.Client(project=PROJECT_ID, credentials=creds)
+
     env = os.environ.copy()
     result = subprocess.run(
         ["gcloud", "auth", "print-access-token", "--quiet"],
@@ -91,7 +106,8 @@ def main():
             print(f"   ✅ Done.\n")
         except Exception as e:
             print(f"   ❌ FAILED: {e}\n")
-            user_input = input("   Continue? (y/n): ").strip().lower()
+            # No prompt in CI (no stdin): fail the deploy instead.
+            user_input = "n" if os.environ.get("CI") else input("   Continue? (y/n): ").strip().lower()
             if user_input != "y":
                 print("Deployment aborted.")
                 sys.exit(1)

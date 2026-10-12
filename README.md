@@ -58,20 +58,41 @@ The system is built on a 3-tier architecture:
 
 ---
 
-## 🌐 Production Deployment (Google Cloud Run)
+## 🌐 Production Deployment (CI/CD)
 
-The application is containerized using Docker, serving both the React SPA and the FastAPI backend through a single unified container.
+Deployment is automatic. `.github/workflows/ci-cd.yml` runs on every pull request and every push to `master`:
 
-1. Submit the build to Cloud Run:
-   ```bash
-   gcloud run deploy fitness-optimax \
-     --source . \
-     --project gen-lang-client-0937519537 \
-     --region europe-west2 \
-     --allow-unauthenticated
-   ```
+| Job | Runs on | What it does |
+| --- | --- | --- |
+| API tests + exercise catalogue | PRs and `master` | `tests/smoke_test_api.py`, `pytest tests`, `scripts/sync_exercises.py validate` |
+| Frontend lint + build | PRs and `master` | `npm ci`, `npm run lint`, `npm run build` |
+| Deploy to Cloud Run | `master` only, after both pass | Redeploys the BigQuery views if `sql/` changed, then `gcloud run deploy --source .` and a `/api/health` check |
 
-*(Ensure your Cloud Run service account has the necessary IAM permissions to query BigQuery `roles/bigquery.dataViewer`, `roles/bigquery.dataEditor`, and `roles/bigquery.user`).*
+GitHub authenticates to Google Cloud with Workload Identity Federation (no stored keys). One-off setup, from a machine logged in to `gcloud` (project owner) and `gh`:
+
+```bash
+bash scripts/setup_github_deploy.sh
+```
+
+Manual fallback, if ever needed:
+
+```bash
+gcloud run deploy fitness-optimax --source . \
+  --project gen-lang-client-0937519537 --region europe-west2 --allow-unauthenticated
+```
+
+*(The Cloud Run runtime service account needs `roles/bigquery.dataViewer`, `roles/bigquery.dataEditor` and `roles/bigquery.user`.)*
+
+## 📅 Monthly programme sync
+
+North Tyneside Barbells publish a new programme spreadsheet each month into the Drive folder **Olympic Weight Training**. A scheduled Claude task checks that folder daily; when a new or changed spreadsheet appears it:
+
+1. exports it as `.xlsx` and runs `python scripts/sync_exercises.py diff <file>`;
+2. for any exercise not yet in `frontend/src/data/exercises.json`, picks a catalogue name (INITCAP-safe, no `/`) and a category, then runs `apply` with that mapping;
+3. has a reviewer sub-agent check the diff, opens a PR, and merges it once CI is green, which deploys it;
+4. records the file in `config/processed_programmes.json` so it is not processed twice.
+
+Programme spellings that differ from catalogue names (e.g. "SA Row" → "Single Arm Row") are kept in the `aliases` map of `exercises.json`.
 
 ---
 

@@ -1,6 +1,26 @@
 import ReactECharts from 'echarts-for-react'
 import './SPCChart.css'
 
+// North Tyneside Barbells theme — mirrors the tokens in index.css.
+// ECharts draws to canvas, so it needs literal colours rather than CSS vars.
+const C = {
+  line: '#46BCFF',
+  ma3: '#8BD3FF',
+  ma5: '#2E86C1',
+  ma7: '#FFFFFF',
+  limit: '#FF5C63',
+  zoneA: 'rgba(255, 92, 99, 0.06)',
+  golden: '#FFFFFF',
+  goldenGlow: 'rgba(255, 255, 255, 0.8)',
+  text: '#FFFFFF',
+  secondary: '#B4B4B4',
+  muted: '#8A8D93',
+  border: '#2A2C30',
+  grid: '#1E2023',
+  tooltipBg: 'rgba(18, 19, 21, 0.96)',
+  font: 'Montserrat, sans-serif',
+}
+
 export default function SPCChart({ data }) {
   if (!data || !data.sessions || data.sessions.length === 0) return null
 
@@ -36,13 +56,13 @@ export default function SPCChart({ data }) {
 
   // ECharts Option Configuration
   const option = {
-    color: ['#773141', '#773141', '#9B4D5E', '#FFB612'], // Main, MA3, MA5, MA7
+    color: [C.line, C.ma3, C.ma5, C.ma7], // Main, MA3, MA5, MA7
     tooltip: {
       trigger: 'axis',
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      borderColor: '#E5E7EB',
-      textStyle: { color: '#1A1A1A' },
-      axisPointer: { type: 'line', lineStyle: { type: 'dashed', color: '#9CA3AF' } },
+      backgroundColor: C.tooltipBg,
+      borderColor: C.border,
+      textStyle: { color: C.text, fontFamily: C.font },
+      axisPointer: { type: 'line', lineStyle: { type: 'dashed', color: C.muted } },
       formatter: function (params) {
         let res = `<div style="font-weight:600; margin-bottom:4px;">${params[0].axisValue}</div>`
         params.forEach(p => {
@@ -57,7 +77,7 @@ export default function SPCChart({ data }) {
       data: ['Weight', 'MA3', 'MA5', 'MA7'],
       bottom: 0,
       icon: 'circle',
-      textStyle: { color: '#6B7280' }
+      textStyle: { color: C.secondary, fontFamily: C.font }
     },
     grid: {
       left: '3%',
@@ -69,15 +89,15 @@ export default function SPCChart({ data }) {
     xAxis: {
       type: 'category',
       data: dates,
-      axisLine: { lineStyle: { color: '#E5E7EB' } },
-      axisLabel: { color: '#6B7280' },
+      axisLine: { lineStyle: { color: C.border } },
+      axisLabel: { color: C.secondary, fontFamily: C.font },
       axisTick: { show: false }
     },
     yAxis: {
       type: 'value',
       scale: true,
-      splitLine: { lineStyle: { color: '#F3F4F6' } },
-      axisLabel: { color: '#6B7280' }
+      splitLine: { lineStyle: { color: C.grid } },
+      axisLabel: { color: C.secondary, fontFamily: C.font }
     },
     series: [
       {
@@ -86,21 +106,21 @@ export default function SPCChart({ data }) {
         data: weights,
         symbol: 'circle',
         symbolSize: 6,
-        lineStyle: { width: 2, color: '#773141' },
-        itemStyle: { color: '#773141' },
+        lineStyle: { width: 2, color: C.line },
+        itemStyle: { color: C.line },
         markLine: {
           silent: true,
           symbol: ['none', 'none'],
-          label: { position: 'end', color: '#6B7280' },
+          label: { position: 'end', color: C.secondary, fontFamily: C.font },
           data: [
-            { yAxis: cl, name: 'CL', lineStyle: { type: 'dashed', color: '#9CA3AF' } },
-            { yAxis: ucl, name: 'UCL', lineStyle: { type: 'dashed', color: '#DC2626' } },
-            { yAxis: lcl, name: 'LCL', lineStyle: { type: 'dashed', color: '#DC2626' } }
+            { yAxis: cl, name: 'CL', lineStyle: { type: 'dashed', color: C.muted } },
+            { yAxis: ucl, name: 'UCL', lineStyle: { type: 'dashed', color: C.limit } },
+            { yAxis: lcl, name: 'LCL', lineStyle: { type: 'dashed', color: C.limit } }
           ]
         },
         markArea: {
           silent: true,
-          itemStyle: { color: 'rgba(220, 38, 38, 0.05)' },
+          itemStyle: { color: C.zoneA },
           data: [
             [{ yAxis: ucl }, { yAxis: ucl - (ucl - cl) / 3 }],
             [{ yAxis: lcl }, { yAxis: lcl + (cl - lcl) / 3 }]
@@ -110,7 +130,7 @@ export default function SPCChart({ data }) {
           data: [
             ...outOfControlPoints.map(p => ({
               ...p,
-              itemStyle: { color: '#DC2626' },
+              itemStyle: { color: C.limit },
               symbol: 'circle',
               symbolSize: 12
             }))
@@ -130,9 +150,9 @@ export default function SPCChart({ data }) {
           period: 4
         },
         itemStyle: {
-          color: '#FFB612',
+          color: C.golden,
           shadowBlur: 10,
-          shadowColor: 'rgba(255, 182, 18, 0.8)'
+          shadowColor: C.goldenGlow
         },
         zlevel: 1
       },
@@ -141,21 +161,24 @@ export default function SPCChart({ data }) {
         type: 'line',
         data: ma3,
         symbol: 'none',
-        lineStyle: { width: 1.5, type: 'solid', color: '#773141', opacity: 0.8 }
+        lineStyle: { width: 1.5, type: 'solid', color: C.ma3, opacity: 0.8 },
+        itemStyle: { color: C.ma3 }  // keeps the legend swatch in sync with the line
       },
       {
         name: 'MA5',
         type: 'line',
         data: ma5,
         symbol: 'none',
-        lineStyle: { width: 1.5, type: 'solid', color: '#9B4D5E', opacity: 0.8 }
+        lineStyle: { width: 1.5, type: 'solid', color: C.ma5, opacity: 0.8 },
+        itemStyle: { color: C.ma5 }  // keeps the legend swatch in sync with the line
       },
       {
         name: 'MA7',
         type: 'line',
         data: ma7,
         symbol: 'none',
-        lineStyle: { width: 1.5, type: 'solid', color: '#FFB612', opacity: 0.8 }
+        lineStyle: { width: 1.5, type: 'solid', color: C.ma7, opacity: 0.8 },
+        itemStyle: { color: C.ma7 }  // keeps the legend swatch in sync with the line
       }
     ]
   }

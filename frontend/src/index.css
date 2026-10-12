@@ -1,63 +1,68 @@
 /* ===========================
    Fitness OptiMax — Design System
-   Washington Commanders Theme
+   North Tyneside Barbells theme (dark)
+   Club palette: black, white, NTB blue #46BCFF
+   Type: Montserrat — the open-source sibling of Trueno, the club's typeface
    =========================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Montserrat is loaded once, from index.html */
 
 :root {
+  color-scheme: dark;
+
   /* Backgrounds */
-  --bg-primary: #FAFAFA;
-  --bg-card: #FFFFFF;
-  --bg-hover: #FDF8F0;
-  --bg-surface: #F9FAFB;
+  --bg-primary: #000000;
+  --bg-card: #121315;
+  --bg-hover: #181A1D;
+  --bg-surface: #0A0A0B;
+  --bg-input: #0A0A0B;
 
   /* Text */
-  --text-primary: #1A1A1A;
-  --text-secondary: #6B7280;
-  --text-muted: #9CA3AF;
-  --text-inverse: #FFFFFF;
+  --text-primary: #FFFFFF;
+  --text-secondary: #B4B4B4;
+  --text-muted: #8A8D93;
+  --text-inverse: #000000;   /* text on NTB blue */
 
-  /* Commanders palette */
-  --burgundy: #773141;
-  --burgundy-light: #9B4D5E;
-  --burgundy-faint: rgba(119, 49, 65, 0.08);
-  --burgundy-glow: rgba(119, 49, 65, 0.15);
-  --gold: #FFB612;
-  --gold-light: #FFEEBA;
-  --gold-dark: #D4960F;
-  --gold-faint: rgba(255, 182, 18, 0.12);
+  /* NTB palette */
+  --brand: #46BCFF;
+  --brand-strong: #1FA6F2;
+  --brand-light: #8BD3FF;
+  --brand-faint: rgba(70, 188, 255, 0.12);
+  --brand-glow: rgba(70, 188, 255, 0.28);
+  --highlight: #FFFFFF;
+  --highlight-faint: rgba(255, 255, 255, 0.10);
+  --highlight-glow: rgba(255, 255, 255, 0.35);
 
-  /* SPC Chart colours */
-  --chart-line: #773141;
-  --chart-cl: #9CA3AF;
-  --chart-ucl: #DC2626;
-  --chart-lcl: #DC2626;
-  --chart-zone-a: rgba(220, 38, 38, 0.05);
-  --chart-golden: #FFB612;
-  --chart-violation: #DC2626;
-  --chart-ma3: #773141;
-  --chart-ma5: #9B4D5E;
-  --chart-ma7: #FFB612;
+  /* SPC Chart colours (mirrored in SPCChart.jsx — ECharts needs literals) */
+  --chart-line: #46BCFF;
+  --chart-cl: #8A8D93;
+  --chart-ucl: #FF5C63;
+  --chart-lcl: #FF5C63;
+  --chart-zone-a: rgba(255, 92, 99, 0.06);
+  --chart-golden: #FFFFFF;
+  --chart-violation: #FF5C63;
+  --chart-ma3: #8BD3FF;
+  --chart-ma5: #2E86C1;
+  --chart-ma7: #FFFFFF;
 
   /* Status colours */
-  --success: #059669;
-  --success-bg: rgba(5, 150, 105, 0.08);
-  --warning: #D97706;
-  --warning-bg: rgba(217, 119, 6, 0.08);
-  --danger: #DC2626;
-  --danger-bg: rgba(220, 38, 38, 0.08);
+  --success: #34D399;
+  --success-bg: rgba(52, 211, 153, 0.12);
+  --warning: #FBBF24;
+  --warning-bg: rgba(251, 191, 36, 0.12);
+  --danger: #FF5C63;
+  --danger-bg: rgba(255, 92, 99, 0.12);
 
   /* Borders & dividers */
-  --border: #E5E7EB;
-  --border-light: #F3F4F6;
+  --border: #2A2C30;
+  --border-light: #1E2023;
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.08);
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-card-hover: 0 8px 24px rgba(119, 49, 65, 0.1);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.6);
+  --shadow-card-hover: 0 12px 28px -8px rgba(70, 188, 255, 0.25);
 
   /* Spacing scale */
   --space-xs: 0.25rem;
@@ -81,7 +86,7 @@
   --transition-slow: 400ms ease;
 
   /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
 }
 
@@ -122,25 +127,27 @@ body {
 
 h1, h2, h3, h4 {
   font-family: var(--font-sans);
-  font-weight: 600;
+  font-weight: 800;
   color: var(--text-primary);
   line-height: 1.2;
 }
 
 h1 {
   font-size: 1.75rem;
-  letter-spacing: -0.02em;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 h2 {
   font-size: 1.25rem;
-  font-weight: 500;
+  font-weight: 800;
   letter-spacing: -0.01em;
 }
 
 h3 {
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 p {
@@ -149,13 +156,13 @@ p {
 }
 
 a {
-  color: var(--burgundy);
+  color: var(--brand);
   text-decoration: none;
   transition: color var(--transition-fast);
 }
 
 a:hover {
-  color: var(--burgundy-light);
+  color: var(--brand-light);
 }
 
 /* ===========================
@@ -215,9 +222,9 @@ a:hover {
   100% { background-position: 200% 0; }
 }
 
-@keyframes goldenGlow {
-  0%, 100% { box-shadow: 0 0 8px rgba(255, 182, 18, 0.3); }
-  50%      { box-shadow: 0 0 20px rgba(255, 182, 18, 0.6); }
+@keyframes highlightGlow {
+  0%, 100% { box-shadow: 0 0 8px var(--highlight-faint); }
+  50%      { box-shadow: 0 0 20px var(--highlight-glow); }
 }
 
 .animate-fade-in {
@@ -226,6 +233,48 @@ a:hover {
 
 .animate-fade-in-up {
   animation: fadeInUp 0.5s ease both;
+}
+
+/* ===========================
+   Buttons
+   =========================== */
+
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  background: var(--brand);
+  color: var(--text-inverse);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.primary-button:hover {
+  background: var(--brand-light);
+  box-shadow: 0 6px 20px var(--brand-glow);
+}
+
+.primary-button:active {
+  transform: translateY(1px);
+}
+
+.primary-button:focus-visible {
+  outline: 2px solid var(--highlight);
+  outline-offset: 2px;
+}
+
+.primary-button:disabled {
+  background: var(--border);
+  color: var(--text-muted);
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 /* ===========================

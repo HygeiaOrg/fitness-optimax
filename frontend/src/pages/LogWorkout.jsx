@@ -2,25 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import { logWorkout } from '../services/api'
+import { EXERCISE_CATEGORIES } from '../data/exercises'
 import './LogWorkout.css'
-
-const EXERCISE_GROUPS = [
-  'Upper Body',
-  'Lower Body',
-  'Push',
-  'Pull',
-  'Legs',
-  'Back',
-  'Chest',
-  'Shoulders',
-  'Arms',
-  'Core',
-  'Lat',
-  'Deadlift',
-  'Squat',
-  'Cardio',
-  'Full Body',
-]
 
 export default function LogWorkout() {
   const navigate = useNavigate()
@@ -86,7 +69,7 @@ export default function LogWorkout() {
           {error && <div className="form-error">{error}</div>}
           
           <div className="form-group">
-            <label htmlFor="exercise_group">Exercise Group</label>
+            <label htmlFor="exercise_group">Exercise</label>
             <select
               id="exercise_group"
               name="exercise_group"
@@ -95,9 +78,13 @@ export default function LogWorkout() {
               required
               className="form-select"
             >
-              <option value="" disabled>Select a workout type…</option>
-              {EXERCISE_GROUPS.map(group => (
-                <option key={group} value={group}>{group}</option>
+              <option value="" disabled>Select an exercise…</option>
+              {EXERCISE_CATEGORIES.map(category => (
+                <optgroup key={category.label} label={category.label}>
+                  {category.exercises.map(exercise => (
+                    <option key={exercise} value={exercise}>{exercise}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>

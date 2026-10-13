@@ -85,7 +85,7 @@ gcloud run deploy fitness-optimax --source . \
 
 ## 📅 Monthly programme sync
 
-North Tyneside Barbells publish a new programme spreadsheet each month into the Drive folder **Olympic Weight Training**. A scheduled Claude task checks that folder daily; when a new or changed spreadsheet appears it:
+North Tyneside Barbells publish a new programme spreadsheet each month into the Drive folder **Olympic Weight Training**. A scheduled Claude task, "Fitness OptiMax programme sync", checks that folder at 06:59 on the 1st of each month. It can also be started at any time from a Claude chat ("run the Fitness OptiMax programme sync"). When it finds a new or changed spreadsheet it:
 
 1. exports it as `.xlsx` and runs `python scripts/sync_exercises.py diff <file>`;
 2. for any exercise not yet in `frontend/src/data/exercises.json`, picks a catalogue name (INITCAP-safe, no `/`) and a category, then runs `apply` with that mapping;

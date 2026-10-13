@@ -1,0 +1,128 @@
+.orm-panel {
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.orm-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.orm-title {
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--brand);
+}
+
+.orm-based {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.orm-label {
+  font-size: 0.72rem;
+}
+
+.orm-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.orm-edit-row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.orm-edit-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.orm-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-md);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.orm-btn-primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--text-inverse);
+}
+
+.orm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.orm-current {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.orm-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.orm-value-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.orm-link {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--brand);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: var(--space-xs);
+}
+
+.orm-note {
+  font-size: 0.8rem;
+}
+
+.orm-note-warn { color: var(--warning); }
+.orm-note-error { color: var(--danger); }
+
+.orm-result {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--brand-faint);
+  border-radius: var(--radius-sm);
+}
+
+.orm-result-kg {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--brand);
+  font-variant-numeric: tabular-nums;
+}
+
+.orm-result-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}

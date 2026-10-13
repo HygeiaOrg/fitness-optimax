@@ -30,6 +30,7 @@ SQL_FILES = [
     "06_rpe_calibration.sql",
     "07_plateau_detection.sql",
     "08_workout_targets.sql",
+    "09_one_rep_maxes_table.sql",
 ]
 
 

@@ -14,7 +14,8 @@ frontend/src/data/exercises.json.
         Add the new exercises. MAPPING.json maps each programme name to
         {"name": <catalogue name>, "category": <existing category label>}.
         To create a category, add "new_category": true; it goes just before
-        "General". Nothing is written unless the result passes validate.
+        "General". Add "one_rm_base": <lift> when the programme prescribes the
+        exercise as a % of another lift's 1RM (e.g. "of Snatch"). Nothing is written unless the result passes validate.
 
     python scripts/sync_exercises.py validate [PROGRAMME.xlsx]
         Check the catalogue's invariants and, if a programme is given, that
@@ -133,6 +134,9 @@ def apply(path: str, mapping_path: str) -> list[str]:
             idx = next((i for i, c in enumerate(cat["categories"]) if c["label"] == "General"), len(cat["categories"]))
             cat["categories"].insert(idx, group)
         group["exercises"].append(target)
+        base = mapping[prog_name].get("one_rm_base")
+        if base and base != target:
+            cat.setdefault("one_rm_base", {})[target] = base
         added.append(target)
     errs = problems(cat)
     if errs:
@@ -158,6 +162,12 @@ def problems(cat: dict, programme: str | None = None) -> list[str]:
     for k, v in cat.get("aliases", {}).items():
         if v.lower() not in seen:
             errs.append(f"alias {k!r} points at {v!r}, which is not in the catalogue")
+    lifts = {l.lower() for l in cat.get("one_rm_lifts", [])}
+    for k, v in cat.get("one_rm_base", {}).items():
+        if k.lower() not in seen:
+            errs.append(f"one_rm_base key {k!r} is not in the catalogue")
+        if v.lower() not in lifts and v.lower() not in seen:
+            errs.append(f"one_rm_base {k!r} -> {v!r}, which is neither a 1RM lift nor a catalogue exercise")
     for c in cat["categories"]:
         if not c.get("label") or not c.get("exercises"):
             errs.append(f"category {c.get('label')!r} is empty or unlabeled")

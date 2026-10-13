@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from api.errors import register_exception_handlers
-from api.routes import charts, config, health, targets, workouts
+from api.routes import charts, config, health, one_rep_maxes, targets, workouts
 
 # Cloud Run captures stdout/stderr, so plain logging is all we need to get
 # tracebacks into Logs Explorer.
@@ -39,6 +39,7 @@ app.include_router(targets.router, prefix="/api/targets", tags=["Targets"])
 app.include_router(charts.router, prefix="/api/charts", tags=["Charts"])
 app.include_router(config.router, prefix="/api/goals", tags=["Configuration"])
 app.include_router(workouts.router, prefix="/api/workouts", tags=["Workouts"])
+app.include_router(one_rep_maxes.router, prefix="/api/one-rep-maxes", tags=["One Rep Maxes"])
 
 @app.get("/api")
 def root():

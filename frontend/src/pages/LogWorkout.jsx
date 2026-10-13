@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
-import { logWorkout } from '../services/api'
-import { EXERCISE_CATEGORIES } from '../data/exercises'
+import OneRepMaxPanel from '../components/OneRepMaxPanel'
+import { fetchOneRepMaxes, logWorkout, saveOneRepMax } from '../services/api'
+import { EXERCISE_CATEGORIES, baseLiftFor, usesOneRm, weightAtPercent } from '../data/exercises'
 import './LogWorkout.css'
 
 export default function LogWorkout() {
@@ -19,12 +20,60 @@ export default function LogWorkout() {
     rpe: ''
   })
 
+  // 1RMs keyed by lift, the chosen working %, and whether Total Weight is
+  // being filled from that % (stops as soon as the athlete types their own).
+  const [oneRms, setOneRms] = useState({})
+  const [oneRmLoadError, setOneRmLoadError] = useState(null)
+  const [percent, setPercent] = useState('')
+  const [weightAuto, setWeightAuto] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchOneRepMaxes(formData.athlete_name)
+      .then(map => { if (!cancelled) { setOneRms(map); setOneRmLoadError(null) } })
+      .catch(err => { if (!cancelled) setOneRmLoadError(err.message) })
+    return () => { cancelled = true }
+  }, [formData.athlete_name])
+
+  const baseLift = formData.exercise_group ? baseLiftFor(formData.exercise_group) : null
+  const oneRm = baseLift ? oneRms[baseLift] : undefined
+
+  // Total Weight is session volume: kg on the bar × total reps.
+  // While auto is on, a value that can't be worked out any more (no %, reps
+  // or 1RM) is cleared rather than left behind from a previous choice.
+  const autoTotal = (data, pct, rm, auto) => {
+    if (!auto) return data
+    const reps = parseInt(data.total_reps)
+    if (!pct || !rm || !(reps > 0)) return { ...data, total_weight: '' }
+    return { ...data, total_weight: String(weightAtPercent(rm, Number(pct)) * reps) }
+  }
+
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+    if (name === 'exercise_group') {
+      setPercent('')
+      setFormData(prev => (weightAuto ? { ...prev, exercise_group: value, total_weight: '' } : { ...prev, exercise_group: value }))
+      return
+    }
+    if (name === 'total_weight') setWeightAuto(false)
+    setFormData(prev => autoTotal({ ...prev, [name]: value }, percent, oneRm, name === 'total_weight' ? false : weightAuto))
+  }
+
+  const handlePercentChange = (value) => {
+    setPercent(value)
+    setWeightAuto(true)
+    setFormData(prev => autoTotal(prev, value, oneRm, true))
+  }
+
+  const handleSaveOneRm = async (lift, kg) => {
+    setOneRms(prev => ({ ...prev, [lift]: kg }))
+    setFormData(prev => autoTotal(prev, percent, kg, weightAuto))
+    try {
+      await saveOneRepMax(formData.athlete_name, lift, kg)
+      return { saved: true }
+    } catch (err) {
+      return { saved: false, error: err.message }
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -88,6 +137,19 @@ export default function LogWorkout() {
               ))}
             </select>
           </div>
+
+          {formData.exercise_group && usesOneRm(formData.exercise_group) && (
+            <OneRepMaxPanel
+              key={formData.exercise_group}
+              exercise={formData.exercise_group}
+              baseLift={baseLift}
+              oneRm={oneRm}
+              percent={percent}
+              onPercentChange={handlePercentChange}
+              onSaveOneRm={handleSaveOneRm}
+              loadError={oneRmLoadError}
+            />
+          )}
           
           <div className="form-row">
             <div className="form-group">
@@ -140,6 +202,14 @@ export default function LogWorkout() {
               onChange={handleChange}
               required
             />
+            {percent && oneRm && weightAuto && formData.total_reps && (
+              <small className="form-help reps-hint">
+                Auto: {weightAtPercent(oneRm, Number(percent))} kg × {formData.total_reps} reps. Type to override.
+              </small>
+            )}
+            {percent && oneRm && weightAuto && !formData.total_reps && (
+              <small className="form-help">Enter total reps to fill this in from your {percent}%.</small>
+            )}
           </div>
           
           <div className="form-group">

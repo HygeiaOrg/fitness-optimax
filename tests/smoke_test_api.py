@@ -166,6 +166,29 @@ r = client.post("/api/workouts", json=dict(athlete_name="John", exercise_group="
                                            sets=4, total_reps=32, total_weight=1200.0, rpe=4))
 check("failed insert -> 502 with reason", r.status_code == 502 and "Column mismatch" in r.json()["detail"], r.text)
 
+# --- 9. One rep maxes --------------------------------------------------------
+use(FakeBQ([FakeRow(dict(lift="Snatch", one_rm_kg=100.0, recorded_at=datetime.datetime(2026, 10, 1, 9, 0))),
+            FakeRow(dict(lift="Back Squat", one_rm_kg=None, recorded_at=None))]))
+r = client.get("/api/one-rep-maxes", params={"athlete_name": "John"})
+check("list 1RMs -> 200", r.status_code == 200, r.text)
+check("list 1RMs skips NULL rows", [m["lift"] for m in r.json()["one_rep_maxes"]] == ["Snatch"], r.text)
+
+r = client.get("/api/one-rep-maxes")
+check("list 1RMs without athlete -> 422", r.status_code == 422, r.text)
+
+use(FakeBQ([]))
+r = client.post("/api/one-rep-maxes", json=dict(athlete_name="John", lift="  Snatch ", one_rm_kg=102.5))
+check("save 1RM -> 200", r.status_code == 200 and r.json()["lift"] == "Snatch" and r.json()["one_rm_kg"] == 102.5, r.text)
+
+r = client.post("/api/one-rep-maxes", json=dict(athlete_name="John", lift="Snatch", one_rm_kg=0))
+check("save 1RM of 0 -> 422", r.status_code == 422, r.text)
+r = client.post("/api/one-rep-maxes", json=dict(athlete_name="John", lift="Snatch", one_rm_kg=1000))
+check("save absurd 1RM -> 422", r.status_code == 422, r.text)
+
+use(FailingInsert())
+r = client.post("/api/one-rep-maxes", json=dict(athlete_name="John", lift="Snatch", one_rm_kg=100))
+check("failed 1RM insert -> 502", r.status_code == 502, r.text)
+
 print()
 print("FAILURES:", failures if failures else "none")
 sys.exit(1 if failures else 0)

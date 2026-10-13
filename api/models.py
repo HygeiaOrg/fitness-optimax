@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
-from datetime import date
+from datetime import date, datetime
 
 # -----------------
 # Target Endpoints
@@ -82,3 +82,21 @@ class LogWorkoutRequest(BaseModel):
 class LogWorkoutResponse(BaseModel):
     message: str
     workout_id: Optional[str] = None
+
+# -----------------
+# One Rep Max Endpoints
+# -----------------
+class OneRepMax(BaseModel):
+    lift: str
+    one_rm_kg: float
+    recorded_at: Optional[datetime] = None
+
+class OneRepMaxListResponse(BaseModel):
+    athlete_name: str
+    one_rep_maxes: List[OneRepMax]
+
+class SaveOneRepMaxRequest(BaseModel):
+    athlete_name: str = Field(min_length=1)
+    lift: str = Field(min_length=1)
+    # World-record territory is ~300 kg; 500 leaves room and still catches typos.
+    one_rm_kg: float = Field(gt=0, le=500)

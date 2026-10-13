@@ -15,14 +15,25 @@
         "Power Clean & Power Jerk",
         "Hang Power Clean + Jerk",
         "Jerk",
-        "Push Press"
+        "Push Press",
+        "Block Power Clean",
+        "Hang Power Snatch",
+        "High Pull + Hang Power Snatch",
+        "Low Hang Power Clean + Jerk",
+        "Low Hang Power Snatch + Snatch Balance",
+        "Power Clean + Jerk",
+        "Power Snatch + Overhead Squat",
+        "Push Press + Jerk"
       ]
     },
     {
       "label": "Pulls",
       "exercises": [
         "Snatch Pull",
-        "Clean Pull"
+        "Clean Pull",
+        "Block Pull",
+        "Snatch Deadlift",
+        "Snatch High Pull"
       ]
     },
     {
@@ -32,7 +43,9 @@
         "Front Squat",
         "Split Squat",
         "Leg Press",
-        "Single Leg Romanian Deadlift"
+        "Single Leg Romanian Deadlift",
+        "Hamstring Curl",
+        "Leg Extension"
       ]
     },
     {
@@ -42,7 +55,15 @@
         "Single Arm Row",
         "Lat Pulldown",
         "Face Pull",
-        "Cable Curl"
+        "Cable Curl",
+        "Bench Press",
+        "Dumbbell Lateral Raise",
+        "Dumbbell Pullover",
+        "Incline Bench Press",
+        "Strict Press",
+        "Seated Press",
+        "Tricep Extension",
+        "Weighted Pull Up"
       ]
     },
     {
@@ -55,7 +76,11 @@
         "Leg Raise",
         "Ab Rollout",
         "Side Bend",
-        "Dead Bug"
+        "Dead Bug",
+        "Barbell Hip Thrust",
+        "Copenhagen Plank",
+        "Romanian Deadlift",
+        "Weighted Plank"
       ]
     },
     {
@@ -90,6 +115,19 @@
     "Split Squats": "Split Squat",
     "Deadbugs": "Dead Bug",
     "Cable Curls": "Cable Curl",
-    "Side Bends": "Side Bend"
+    "Side Bends": "Side Bend",
+    "Back / Trunk Iso's": "Back Extension Iso Hold",
+    "Back Squats": "Back Squat",
+    "Copenhagen Planks": "Copenhagen Plank",
+    "DB Lat Raise": "Dumbbell Lateral Raise",
+    "DB Pull Overs": "Dumbbell Pullover",
+    "Hamstring Curls": "Hamstring Curl",
+    "Power Snatch + OH Squat": "Power Snatch + Overhead Squat",
+    "RDL's": "Romanian Deadlift",
+    "Reverse Hyper Ext": "Reverse Hyper",
+    "Seated Press or Strict Press": "Strict Press",
+    "Tricep Extensions": "Tricep Extension",
+    "Weighted Planks": "Weighted Plank",
+    "Weighted Pull Ups": "Weighted Pull Up"
   }
 }

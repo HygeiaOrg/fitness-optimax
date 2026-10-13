@@ -82,6 +82,27 @@ export async function logWorkout(workoutData) {
 }
 
 /**
+ * Current 1RM per lift for an athlete.
+ * GET /api/one-rep-maxes?athlete_name=…  →  { lift: kg, … }
+ */
+export async function fetchOneRepMaxes(athleteName) {
+  const body = await request(`/api/one-rep-maxes?athlete_name=${encodeURIComponent(athleteName)}`);
+  return Object.fromEntries(body.one_rep_maxes.map(m => [m.lift, m.one_rm_kg]));
+}
+
+/**
+ * Record a new 1RM for a lift.
+ * POST /api/one-rep-maxes
+ */
+export async function saveOneRepMax(athleteName, lift, oneRmKg) {
+  return request('/api/one-rep-maxes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ athlete_name: athleteName, lift, one_rm_kg: oneRmKg })
+  });
+}
+
+/**
  * Probe every layer of the BigQuery pipeline.
  * GET /api/diagnostics
  */

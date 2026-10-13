@@ -125,3 +125,19 @@ def test_apply_refuses_invalid_name_without_writing(tmp_path, monkeypatch):
     with pytest.raises(SystemExit):
         sx.apply(p, m)
     assert cat_path.read_text() == before
+
+
+def test_validate_flags_bad_one_rm_base():
+    cat = {"categories": [{"label": "X", "exercises": ["Snatch", "Hang Snatch"]}],
+           "one_rm_lifts": ["Snatch"],
+           "one_rm_base": {"Hang Snatch": "Snatch", "Ghost Lift": "Snatch", "Snatch": "Moon Lift"}}
+    errs = "\n".join(sx.problems(cat))
+    assert "Ghost Lift" in errs and "Moon Lift" in errs and "Hang Snatch" not in errs
+
+
+def test_apply_records_one_rm_base(tmp_path, monkeypatch):
+    cat_path, p, m = _scratch(tmp_path, monkeypatch, [("Tall Snatch", 3)],
+                              {"Tall Snatch": {"name": "Tall Snatch", "category": "Olympic Lifts",
+                                               "one_rm_base": "Snatch"}})
+    sx.apply(p, m)
+    assert sx.load()["one_rm_base"]["Tall Snatch"] == "Snatch"

@@ -88,7 +88,7 @@ gcloud run deploy fitness-optimax --source . \
 North Tyneside Barbells publish a new programme spreadsheet each month into the Drive folder **Olympic Weight Training**. A scheduled Claude task, "Fitness OptiMax programme sync", checks that folder at 06:59 on the 1st of each month. It can also be started at any time from a Claude chat ("run the Fitness OptiMax programme sync"). When it finds a new or changed spreadsheet it:
 
 1. exports it as `.xlsx` and runs `python scripts/sync_exercises.py diff <file>`;
-2. for any exercise not yet in `frontend/src/data/exercises.json`, picks a catalogue name (INITCAP-safe, no `/`) and a category, then runs `apply` with that mapping;
+2. for any exercise not yet in `frontend/src/data/exercises.json`, picks a catalogue name (INITCAP-safe, no `/`), a category and, where the programme gives the % "of" another lift, a `one_rm_base`, then runs `apply` with that mapping;
 3. has a reviewer sub-agent check the diff, opens a PR, and merges it once CI is green, which deploys it;
 4. records the file in `config/processed_programmes.json` so it is not processed twice.
 
@@ -101,6 +101,7 @@ Programme spellings that differ from catalogue names (e.g. "SA Row" → "Single 
 - **Progressive Overload Targets**: Auto-generated next-workout targets (Sets, Reps, Weight) based on your rolling averages.
 - **SPC I-Charts**: Beautiful, Interactive Statistical Process Control charts highlighting exactly when your performance breaks outside standard variation limits.
 - **Native Data Entry**: Log your workouts directly from the mobile-responsive UI straight to BigQuery.
+- **% of 1RM Working Weights**: On Log Workout, pick an exercise and a working % (50–110%) and the app shows the kg on the bar from your recorded 1RM, then fills Total Weight (kg × total reps). Variations use their base lift's 1RM, as the club programme does ("Snatch High Pull 80–90% of Snatch") — see `one_rm_lifts` / `one_rm_base` in `exercises.json`. 1RMs are stored per athlete in the `one_rep_maxes` table (`GET`/`POST /api/one-rep-maxes`); history is kept and the newest entry counts.
 - **RPE Calibration**: Workouts are weighted by your Rate of Perceived Exertion.
 
 ---

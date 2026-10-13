@@ -2,7 +2,8 @@
   "_comment": [
     "Exercise catalogue for the Log Workout form. Edited by scripts/sync_exercises.py and the monthly programme sync.",
     "Names must survive BigQuery INITCAP() unchanged and contain no '/', which would break /api/charts/{exercise_group}.",
-    "aliases maps a name as written in the NTB programme spreadsheet to its catalogue name."
+    "aliases maps a name as written in the NTB programme spreadsheet to its catalogue name.",
+    "one_rm_lifts are the club's tested 1RM lifts (the 'Current 1RM' boxes on the programme sheet). one_rm_base says which lift's 1RM an exercise's % is taken from; an exercise not listed uses its own 1RM."
   ],
   "categories": [
     {
@@ -129,5 +130,37 @@
     "Tricep Extensions": "Tricep Extension",
     "Weighted Planks": "Weighted Plank",
     "Weighted Pull Ups": "Weighted Pull Up"
+  },
+  "one_rm_lifts": [
+    "Snatch",
+    "Clean & Jerk",
+    "Power Snatch",
+    "Power Clean",
+    "Jerk",
+    "Back Squat",
+    "Front Squat",
+    "Overhead Squat",
+    "Push Press",
+    "Back Press",
+    "Strict Press",
+    "Deadlift"
+  ],
+  "one_rm_base": {
+    "Hang Snatch": "Snatch",
+    "Hang Power Snatch": "Snatch",
+    "High Pull + Hang Power Snatch": "Snatch",
+    "Low Hang Power Snatch + Snatch Balance": "Snatch",
+    "Power Snatch + Overhead Squat": "Power Snatch",
+    "Snatch Pull": "Snatch",
+    "Snatch High Pull": "Snatch",
+    "Snatch Deadlift": "Snatch",
+    "Clean Pull": "Clean & Jerk",
+    "Power Clean & Power Jerk": "Power Clean",
+    "Hang Power Clean + Jerk": "Power Clean",
+    "Power Clean + Jerk": "Power Clean",
+    "Low Hang Power Clean + Jerk": "Power Clean",
+    "Block Power Clean": "Power Clean",
+    "Push Press + Jerk": "Push Press",
+    "Seated Press": "Strict Press"
   }
 }

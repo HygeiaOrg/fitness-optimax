@@ -99,7 +99,7 @@ jobs:
           # the SQL is idempotent.
           if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] \
              && git cat-file -e "$BEFORE^{commit}" 2>/dev/null \
-             && git diff --quiet "$BEFORE" HEAD -- sql/ deploy_views.py; then
+             && git diff --quiet "$BEFORE" HEAD -- sql/ deploy_views.py config/bigquery.json; then
             echo "No SQL changes; skipping."
           else
             pip install -q -r requirements.txt

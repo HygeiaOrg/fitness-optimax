@@ -1,5 +1,5 @@
 {
   "_comment": "workout_log_sheet_url: the Google Sheet (Form responses) BigQuery reads workouts from via the external table `Optimmax.Fitness OptiMax`; workout_log_sheet_range: the tab to read (blank = first tab). Share the Sheet (Viewer) with whoever runs deploy_views.py, the Cloud Run runtime service account (881889452278-compute@developer.gserviceaccount.com) and github-deployer@gen-lang-client-0937519537.iam.gserviceaccount.com.",
-  "workout_log_sheet_url": null,
-  "workout_log_sheet_range": null
+  "workout_log_sheet_url": "https://docs.google.com/spreadsheets/d/1mvNDlUmGZrEnkJTtM35wIeu9vSYBzFvq1AM3XColzUw",
+  "workout_log_sheet_range": "OptiMax_log"
 }

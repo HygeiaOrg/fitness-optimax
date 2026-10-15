@@ -118,7 +118,13 @@ def ensure_sheet_table(client):
 
 def execute_sql_file(client, filepath):
     """Execute a SQL file containing one or more statements."""
-    sql = filepath.read_text()
+    # Drop full-line `--` comments first: a semicolon inside a comment would
+    # otherwise split off a comment-only fragment, which BigQuery rejects as
+    # "Unexpected end of statement".
+    sql = "\n".join(
+        line for line in filepath.read_text().splitlines()
+        if not line.lstrip().startswith("--")
+    )
 
     # Split on semicolons for files with multiple statements (config tables)
     statements = [s.strip() for s in sql.split(";") if s.strip()]

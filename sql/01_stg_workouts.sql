@@ -13,8 +13,9 @@
 -- the catalogue doesn't know is left out. The map is generated from
 -- frontend/src/data/exercises.json.
 --
--- RPE is on the sheet's 1-5 scale (5 = nothing left). Entries made on a 1-10
--- scale (6-10) are mapped across by reps in reserve: 10 -> 5, 9 -> 4, 8 -> 3, 7 -> 2, 6 -> 1.
+-- RPE is on the 0-10 scale (10 = nothing left, 9 = one rep left, ...). The
+-- original sheet recorded RPE on a 1-5 scale, so its values are mapped across by
+-- reps in reserve: 5 -> 10, 4 -> 9, 3 -> 8, 2 -> 7, 1 -> 6. The app logs 0-10.
 
 CREATE OR REPLACE VIEW `gen-lang-client-0937519537.Optimmax.stg_workouts` AS
 WITH sheet_rows AS (
@@ -26,7 +27,10 @@ WITH sheet_rows AS (
     SAFE_CAST(string_field_4 AS INT64) AS sets,
     SAFE_CAST(string_field_5 AS INT64) AS total_reps,
     SAFE_CAST(REPLACE(string_field_6, ',', '') AS FLOAT64) AS total_weight,
-    SAFE_CAST(string_field_7 AS INT64) AS rpe
+    -- Sheet RPE was 1-5: move it onto the 0-10 scale.
+    CASE
+      WHEN SAFE_CAST(string_field_7 AS INT64) BETWEEN 1 AND 5 THEN SAFE_CAST(string_field_7 AS INT64) + 5
+    END AS rpe
   FROM
     `gen-lang-client-0937519537.Optimmax.Fitness OptiMax`
   WHERE
@@ -171,11 +175,7 @@ SELECT
   c.sets,
   c.total_reps,
   c.total_weight,
-  CASE
-    WHEN c.rpe BETWEEN 1 AND 5 THEN c.rpe
-    WHEN c.rpe BETWEEN 6 AND 10 THEN c.rpe - 5
-    ELSE NULL
-  END AS rpe
+  CASE WHEN c.rpe BETWEEN 0 AND 10 THEN c.rpe END AS rpe
 FROM combined c
 JOIN exercise_map m
   ON INITCAP(TRIM(REGEXP_REPLACE(c.raw_exercise, r'\s+', ' '))) = m.raw_name

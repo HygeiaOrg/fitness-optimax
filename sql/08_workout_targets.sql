@@ -72,17 +72,17 @@ latest_only AS (
 decision_matrix AS (
   SELECT
     *,
-    -- Strength decision logic (RPE on the 1-5 scale, 5 = nothing left)
+    -- Strength decision logic (RPE on the 0-10 scale, 10 = nothing left)
     CASE
       WHEN is_plateau = TRUE THEN 'REVIEW_REQUIRED'
       WHEN is_out_of_control = TRUE THEN 'REVIEW_REQUIRED'
-      WHEN rpe_avg_3 <= 2.5 THEN 'INCREASE_LOAD'
-      WHEN rpe_avg_3 <= 3.5 THEN 'SLIGHT_INCREASE'
-      WHEN rpe_avg_3 <= 4.5 AND avg_reps_per_set <= 5 THEN 'MAINTAIN'
-      WHEN rpe_avg_3 <= 4.5 AND avg_reps_per_set > 5 THEN 'NUDGE_REDUCE_REPS'
-      WHEN rpe_avg_3 > 4.5 AND avg_reps_per_set <= 2 THEN 'MAINTAIN'
-      WHEN rpe_avg_3 > 4.5 AND avg_reps_per_set <= 5 THEN 'MICRO_INCREASE'
-      WHEN rpe_avg_3 > 4.5 AND avg_reps_per_set > 5 THEN 'NUDGE_REDUCE_REPS'
+      WHEN rpe_avg_3 <= 7.5 THEN 'INCREASE_LOAD'
+      WHEN rpe_avg_3 <= 8.5 THEN 'SLIGHT_INCREASE'
+      WHEN rpe_avg_3 <= 9.5 AND avg_reps_per_set <= 5 THEN 'MAINTAIN'
+      WHEN rpe_avg_3 <= 9.5 AND avg_reps_per_set > 5 THEN 'NUDGE_REDUCE_REPS'
+      WHEN rpe_avg_3 > 9.5 AND avg_reps_per_set <= 2 THEN 'MAINTAIN'
+      WHEN rpe_avg_3 > 9.5 AND avg_reps_per_set <= 5 THEN 'MICRO_INCREASE'
+      WHEN rpe_avg_3 > 9.5 AND avg_reps_per_set > 5 THEN 'NUDGE_REDUCE_REPS'
       ELSE 'MAINTAIN'
     END AS logic_decision
   FROM latest_only

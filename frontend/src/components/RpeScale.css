@@ -17,15 +17,6 @@
   text-align: left;
 }
 
-.rpe-scale.is-picker .rpe-row {
-  cursor: pointer;
-  transition: border-color var(--transition-fast), background var(--transition-fast);
-}
-
-.rpe-scale.is-picker .rpe-row:hover {
-  border-color: var(--brand);
-}
-
 .rpe-row.is-active {
   border-color: var(--brand);
   background: var(--brand-faint);
@@ -33,12 +24,14 @@
 
 .rpe-value {
   flex: none;
-  width: 2rem;
+  min-width: 2rem;
+  padding: 0 4px;
   height: 2rem;
   display: grid;
   place-items: center;
-  border-radius: 50%;
+  border-radius: 999px;
   border: 1px solid var(--border);
+  font-size: 0.8rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
@@ -76,4 +69,62 @@
   .rpe-guidance {
     display: none;
   }
+}
+
+/* ── Picker (Log Workout) ─────────────────────────────────── */
+.rpe-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.rpe-buttons {
+  display: grid;
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.rpe-btn {
+  height: 2.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  padding: 0;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.rpe-btn.is-working {
+  color: var(--text-primary);
+}
+
+.rpe-btn:hover {
+  border-color: var(--brand);
+}
+
+.rpe-btn.is-active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--text-inverse);
+}
+
+.rpe-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.rpe-selected {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  min-height: 2.5em;
+}
+
+.rpe-selected strong {
+  color: var(--brand);
 }

@@ -67,9 +67,8 @@ class LogWorkoutRequest(BaseModel):
     sets: int
     total_reps: int
     total_weight: float
-    # RPE on the 1-5 scale used since the original data capture sheet
-    # (1 = very easy, 5 = maximal, nothing left).
-    rpe: int = Field(ge=1, le=5)
+    # RPE on the 0-10 scale (10 = maximal, nothing left; 9 = one rep left).
+    rpe: int = Field(ge=0, le=10)
 
 class LogWorkoutResponse(BaseModel):
     message: str

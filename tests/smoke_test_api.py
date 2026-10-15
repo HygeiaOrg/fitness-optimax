@@ -160,7 +160,10 @@ r = client.post("/api/workouts", json=dict(athlete_name="John", exercise_group="
 check("log workout -> 200", r.status_code == 200, r.text)
 r = client.post("/api/workouts", json=dict(athlete_name="John", exercise_group="Snatch",
                                            sets=5, total_reps=10, total_weight=700.0, rpe=8))
-check("RPE outside the 1-5 scale -> 422", r.status_code == 422, r.text)
+check("RPE 8 on the 0-10 scale -> 200", r.status_code == 200, r.text)
+r = client.post("/api/workouts", json=dict(athlete_name="John", exercise_group="Snatch",
+                                           sets=5, total_reps=10, total_weight=700.0, rpe=11))
+check("RPE outside the 0-10 scale -> 422", r.status_code == 422, r.text)
 r = client.get("/api/goals")
 check("training goals endpoint removed", r.status_code in (404, 405), r.text)
 

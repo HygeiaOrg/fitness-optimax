@@ -13,13 +13,23 @@ frontend/src/data/exercises.json.
     python scripts/sync_exercises.py apply PROGRAMME.xlsx MAPPING.json
         Add the new exercises. MAPPING.json maps each programme name to
         {"name": <catalogue name>, "category": <existing category label>}.
-        To create a category, add "new_category": true; it goes just before
-        "General". Add "one_rm_base": <lift> when the programme prescribes the
-        exercise as a % of another lift's 1RM (e.g. "of Snatch"). Nothing is written unless the result passes validate.
+        Only Olympic lifts and their derivatives get their own entry (category
+        "Olympic Derivatives"); anything else is mapped onto the muscle group
+        it trains (e.g. {"name": "Leg, Quads", "category": "Legs & Hips"}),
+        which just records an alias. To create a category, add
+        "new_category": true and "kind". Add "one_rm_base": <lift> when the
+        programme prescribes an Olympic derivative as a % of another lift's
+        1RM (e.g. "of Snatch"). Nothing is written unless the result passes
+        validate; sql/01_stg_workouts.sql is regenerated alongside.
+
+    python scripts/sync_exercises.py sql
+        Regenerate the exercise map in sql/01_stg_workouts.sql from the
+        catalogue (BigQuery uses it to roll history up into catalogue entries).
 
     python scripts/sync_exercises.py validate [PROGRAMME.xlsx]
-        Check the catalogue's invariants and, if a programme is given, that
-        every exercise in it is covered. Exits 1 on any problem.
+        Check the catalogue's invariants, that the SQL exercise map is in
+        step with it and, if a programme is given, that every exercise in it
+        is covered. Exits 1 on any problem.
 
 Only the standard library and openpyxl are needed.
 """
@@ -30,7 +40,12 @@ import re
 import sys
 from pathlib import Path
 
-CATALOGUE = Path(__file__).resolve().parent.parent / "frontend" / "src" / "data" / "exercises.json"
+ROOT = Path(__file__).resolve().parent.parent
+CATALOGUE = ROOT / "frontend" / "src" / "data" / "exercises.json"
+STG_SQL = ROOT / "sql" / "01_stg_workouts.sql"
+SQL_BEGIN = "-- BEGIN GENERATED exercise_map (python scripts/sync_exercises.py sql)"
+SQL_END = "-- END GENERATED exercise_map"
+KINDS = {"olympic", "muscle_group"}
 
 # BigQuery INITCAP's default delimiters: whitespace plus these characters.
 _INITCAP_DELIMS = set(" \t\n\r[](){}/|\\<>!?@\"^#$&~_,.:;*%+-")
@@ -130,9 +145,8 @@ def apply(path: str, mapping_path: str) -> list[str]:
                 raise SystemExit(
                     f"Unknown category {label!r} for {prog_name!r}; use an existing one "
                     f"or set \"new_category\": true")
-            group = {"label": label, "exercises": []}
-            idx = next((i for i, c in enumerate(cat["categories"]) if c["label"] == "General"), len(cat["categories"]))
-            cat["categories"].insert(idx, group)
+            group = {"label": label, "kind": mapping[prog_name].get("kind", "olympic"), "exercises": []}
+            cat["categories"].append(group)
         group["exercises"].append(target)
         base = mapping[prog_name].get("one_rm_base")
         if base and base != target:
@@ -142,7 +156,49 @@ def apply(path: str, mapping_path: str) -> list[str]:
     if errs:
         raise SystemExit("Not saved; the catalogue would be invalid:\n  " + "\n  ".join(errs))
     save(cat)
+    write_sql(cat)
     return added
+
+
+def exercise_map(cat: dict) -> list[tuple[str, str]]:
+    """(name as BigQuery sees it after INITCAP, catalogue entry) pairs: every
+    catalogue entry maps to itself, every alias to its target."""
+    pairs = {initcap(n): n for n in catalogue_names(cat)}
+    for k, v in cat.get("aliases", {}).items():
+        pairs.setdefault(initcap(clean(k)), v)
+    return sorted(pairs.items())
+
+
+def _sql_str(s: str) -> str:
+    return "'" + s.replace("\\", "\\\\").replace("'", "\\'") + "'"
+
+
+def sql_block(cat: dict) -> str:
+    rows = ",\n".join(
+        f"    STRUCT({_sql_str(raw)} AS raw_name, {_sql_str(target)} AS exercise_group)"
+        for raw, target in exercise_map(cat)
+    )
+    return f"{SQL_BEGIN}\n  SELECT raw_name, exercise_group FROM UNNEST([\n{rows}\n  ])\n  {SQL_END}"
+
+
+def _split_sql(text: str) -> tuple[str, str, str]:
+    start, end = text.find(SQL_BEGIN), text.find(SQL_END)
+    if start < 0 or end < 0:
+        raise SystemExit(f"{STG_SQL} has no generated exercise_map block")
+    return text[:start], text[start:end + len(SQL_END)], text[end + len(SQL_END):]
+
+
+def write_sql(cat: dict) -> None:
+    before, _, after = _split_sql(STG_SQL.read_text(encoding="utf-8"))
+    STG_SQL.write_text(before + sql_block(cat) + after, encoding="utf-8")
+
+
+def sql_problems(cat: dict) -> list[str]:
+    _, block, _ = _split_sql(STG_SQL.read_text(encoding="utf-8"))
+    if block != sql_block(cat):
+        return [f"{STG_SQL.name} exercise map is out of step with the catalogue; "
+                "run: python scripts/sync_exercises.py sql"]
+    return []
 
 
 def problems(cat: dict, programme: str | None = None) -> list[str]:
@@ -153,24 +209,41 @@ def problems(cat: dict, programme: str | None = None) -> list[str]:
         if n.lower() in seen:
             errs.append(f"duplicate exercise: {n!r}")
         seen.add(n.lower())
+        if ";" in n:
+            errs.append(f"{n!r} contains ';', which deploy_views.py would split the SQL on")
         if "/" in n:
             errs.append(f"{n!r} contains '/', which breaks /api/charts/{{exercise_group}}")
         if initcap(n) != n:
             errs.append(f"{n!r} changes under INITCAP() to {initcap(n)!r}; logged rows would not match")
         if n != clean(n):
             errs.append(f"{n!r} has stray whitespace")
+    by_key: dict[str, str] = {initcap(n): n for n in names}
     for k, v in cat.get("aliases", {}).items():
         if v.lower() not in seen:
             errs.append(f"alias {k!r} points at {v!r}, which is not in the catalogue")
+        if ";" in k:
+            errs.append(f"alias {k!r} contains ';', which deploy_views.py would split the SQL on")
+        key = initcap(clean(k))
+        if by_key.get(key, v) != v:
+            errs.append(f"alias {k!r} -> {v!r} clashes with {by_key[key]!r} once BigQuery INITCAPs it")
+        by_key.setdefault(key, v)
     lifts = {l.lower() for l in cat.get("one_rm_lifts", [])}
     for k, v in cat.get("one_rm_base", {}).items():
         if k.lower() not in seen:
             errs.append(f"one_rm_base key {k!r} is not in the catalogue")
         if v.lower() not in lifts and v.lower() not in seen:
             errs.append(f"one_rm_base {k!r} -> {v!r}, which is neither a 1RM lift nor a catalogue exercise")
+    for k, lifts_for in cat.get("one_rm_reference", {}).items():
+        if k.lower() not in seen:
+            errs.append(f"one_rm_reference key {k!r} is not in the catalogue")
+        for v in lifts_for:
+            if v.lower() not in lifts and v.lower() not in seen:
+                errs.append(f"one_rm_reference {k!r} -> {v!r}, which is neither a 1RM lift nor a catalogue exercise")
     for c in cat["categories"]:
         if not c.get("label") or not c.get("exercises"):
             errs.append(f"category {c.get('label')!r} is empty or unlabeled")
+        if "kind" in c and c["kind"] not in KINDS:
+            errs.append(f"category {c.get('label')!r} has unknown kind {c['kind']!r}")
     if programme:
         for n in diff(programme)["new"]:
             errs.append(f"programme exercise not in catalogue: {n!r}")
@@ -178,7 +251,7 @@ def problems(cat: dict, programme: str | None = None) -> list[str]:
 
 
 def main(argv: list[str]) -> int:
-    if not argv or argv[0] not in {"diff", "apply", "validate", "extract"}:
+    if not argv or argv[0] not in {"diff", "apply", "validate", "extract", "sql"}:
         print(__doc__)
         return 2
     cmd, args = argv[0], argv[1:]
@@ -188,8 +261,12 @@ def main(argv: list[str]) -> int:
         print(json.dumps(diff(args[0]), indent=2))
     elif cmd == "apply":
         print(json.dumps({"added": apply(args[0], args[1])}, indent=2))
+    elif cmd == "sql":
+        write_sql(load())
+        print(f"Wrote exercise map to {STG_SQL}")
     else:
-        errs = problems(load(), args[0] if args else None)
+        cat = load()
+        errs = problems(cat, args[0] if args else None) + sql_problems(cat)
         for e in errs:
             print("FAIL", e)
         print("OK" if not errs else f"{len(errs)} problem(s)")

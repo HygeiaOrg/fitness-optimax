@@ -11,12 +11,6 @@
   padding: var(--space-xl) var(--space-xl) var(--space-4xl);
 }
 
-.exercise-header-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: var(--space-md);
-}
-
 .detail-loading {
   display: flex;
   flex-direction: column;
@@ -36,12 +30,6 @@
   align-items: center;
   gap: var(--space-md);
   margin-bottom: var(--space-md);
-}
-
-.insight-aligned {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--success);
 }
 
 .insight-message {

@@ -58,18 +58,6 @@ export async function fetchChartData(exerciseGroup) {
 }
 
 /**
- * Update training goal for an exercise group.
- * POST /api/goals
- */
-export async function updateTrainingGoal(exerciseGroup, newGoal) {
-  return request('/api/goals', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ exercise_group: exerciseGroup, training_goal: newGoal })
-  });
-}
-
-/**
  * Log a workout session.
  * POST /api/workouts
  */

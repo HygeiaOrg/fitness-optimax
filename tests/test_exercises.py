@@ -34,8 +34,54 @@ def make_programme(path, rows_by_sheet):
     wb.save(path)
 
 
+def _sandbox(tmp_path, monkeypatch):
+    """Point the script at scratch copies of the catalogue and the staging SQL."""
+    cat_path = tmp_path / "exercises.json"
+    cat_path.write_text(sx.CATALOGUE.read_text())
+    sql_path = tmp_path / "01_stg_workouts.sql"
+    sql_path.write_text(sx.STG_SQL.read_text())
+    monkeypatch.setattr(sx, "CATALOGUE", cat_path)
+    monkeypatch.setattr(sx, "STG_SQL", sql_path)
+    return cat_path, sql_path
+
+
 def test_catalogue_is_valid():
-    assert sx.problems(sx.load()) == []
+    cat = sx.load()
+    assert sx.problems(cat) == []
+    assert sx.sql_problems(cat) == []
+
+
+def test_only_olympic_lifts_and_muscle_groups():
+    cat = sx.load()
+    kinds = {c["label"]: c["kind"] for c in cat["categories"]}
+    assert set(kinds.values()) == {"olympic", "muscle_group"}
+    olympic = [e for c in cat["categories"] if c["kind"] == "olympic" for e in c["exercises"]]
+    assert olympic[:2] == ["Snatch", "Clean & Jerk"]
+    assert {"Hang Snatch", "Power Clean"} <= set(olympic)
+    # Accessories are logged under the muscle group from the original sheet.
+    assert "Back Squat" not in sx.catalogue_names(cat)
+    assert sx.resolve("Back Squat", cat) == "Leg, Quads"
+    assert sx.resolve("SA Row", cat) == "Upper Body, Lat"
+
+
+def test_sql_map_rolls_sheet_history_up():
+    pairs = dict(sx.exercise_map(sx.load()))
+    # Values as the sheet holds them, after BigQuery INITCAP.
+    assert pairs["Leg, Quads"] == "Leg, Quads"
+    assert pairs["Olympic, Clean And Jerk"] == "Clean & Jerk"
+    assert pairs["Power, Deadlift (Inc Trap Bar)"] == "Power, Deadlift (Inc Trap Bar)"
+    assert pairs["Bench Press"] == "Upper Body, Chest"
+    assert "Rdl\\'s" in sx.sql_block(sx.load())
+
+
+def test_sql_drift_is_flagged(tmp_path, monkeypatch):
+    _, sql_path = _sandbox(tmp_path, monkeypatch)
+    cat = sx.load()
+    cat["aliases"]["Goblet Squat"] = "Leg, Quads"
+    assert sx.sql_problems(cat)
+    sx.write_sql(cat)
+    assert sx.sql_problems(cat) == []
+    assert "'Goblet Squat' AS raw_name, 'Leg, Quads'" in sql_path.read_text()
 
 
 def test_initcap_matches_bigquery():
@@ -55,34 +101,35 @@ def test_diff_uses_aliases_and_case(tmp_path):
     make_programme(p, {"Wk1": [("SA Row", 3), ("back squat", 4), ("Zercher Squat", 3)]})
     d = sx.diff(p)
     assert d["new"] == ["Zercher Squat"]
-    assert d["known"]["SA Row"] == "Single Arm Row"
-    assert d["known"]["back squat"] == "Back Squat"
+    assert d["known"]["SA Row"] == "Upper Body, Lat"
+    assert d["known"]["back squat"] == "Leg, Quads"
 
 
-def test_apply_adds_exercise_alias_and_category(tmp_path, monkeypatch):
-    cat_path = tmp_path / "exercises.json"
-    cat_path.write_text(sx.CATALOGUE.read_text())
-    monkeypatch.setattr(sx, "CATALOGUE", cat_path)
+def test_apply_maps_accessories_and_adds_derivatives(tmp_path, monkeypatch):
+    _, sql_path = _sandbox(tmp_path, monkeypatch)
     p = tmp_path / "prog.xlsx"
-    make_programme(p, {"Wk1": [("Zercher Squat", 3), ("Farmers Carry", 3), ("SA Row", 3)]})
+    make_programme(p, {"Wk1": [("Zercher Squat", 3), ("Muscle Snatch", 3), ("Farmers Carry", 3), ("SA Row", 3)]})
     mapping = tmp_path / "map.json"
     mapping.write_text(json.dumps({
-        "Zercher Squat": {"name": "Zercher Squat", "category": "Squats & Legs"},
-        "Farmers Carry": {"name": "Farmer Carry", "category": "Strongman", "new_category": True},
+        "Zercher Squat": {"name": "Leg, Quads", "category": "Legs & Hips"},
+        "Muscle Snatch": {"name": "Muscle Snatch", "category": "Olympic Derivatives", "one_rm_base": "Snatch"},
+        "Farmers Carry": {"name": "Farmer Carry", "category": "Strongman", "new_category": True,
+                          "kind": "muscle_group"},
     }))
     added = sx.apply(p, mapping)
-    assert added == ["Farmer Carry", "Zercher Squat"]
+    assert added == ["Farmer Carry", "Muscle Snatch"]
     cat = sx.load()
-    labels = [c["label"] for c in cat["categories"]]
-    assert labels.index("Strongman") == labels.index("General") - 1
+    assert cat["aliases"]["Zercher Squat"] == "Leg, Quads"
+    assert "Zercher Squat" not in sx.catalogue_names(cat)
+    assert cat["categories"][-1] == {"label": "Strongman", "kind": "muscle_group", "exercises": ["Farmer Carry"]}
     assert cat["aliases"]["Farmers Carry"] == "Farmer Carry"
     assert sx.problems(cat, str(p)) == []
+    assert sx.sql_problems(cat) == []
+    assert "'Zercher Squat' AS raw_name, 'Leg, Quads'" in sql_path.read_text()
 
 
 def test_apply_refuses_unmapped(tmp_path, monkeypatch):
-    cat_path = tmp_path / "exercises.json"
-    cat_path.write_text(sx.CATALOGUE.read_text())
-    monkeypatch.setattr(sx, "CATALOGUE", cat_path)
+    _sandbox(tmp_path, monkeypatch)
     p = tmp_path / "prog.xlsx"
     make_programme(p, {"Wk1": [("Zercher Squat", 3)]})
     mapping = tmp_path / "map.json"
@@ -99,9 +146,7 @@ def test_validate_flags_bad_names():
 
 
 def _scratch(tmp_path, monkeypatch, rows, mapping):
-    cat_path = tmp_path / "exercises.json"
-    cat_path.write_text(sx.CATALOGUE.read_text())
-    monkeypatch.setattr(sx, "CATALOGUE", cat_path)
+    cat_path, _ = _sandbox(tmp_path, monkeypatch)
     p = tmp_path / "prog.xlsx"
     make_programme(p, {"Wk1": rows})
     m = tmp_path / "map.json"
@@ -111,7 +156,7 @@ def _scratch(tmp_path, monkeypatch, rows, mapping):
 
 def test_apply_refuses_unknown_category(tmp_path, monkeypatch):
     cat_path, p, m = _scratch(tmp_path, monkeypatch, [("Zercher Squat", 3)],
-                              {"Zercher Squat": {"name": "Zercher Squat", "category": "Squats and Legs"}})
+                              {"Zercher Squat": {"name": "Zercher Squat", "category": "Legs and Hips"}})
     before = cat_path.read_text()
     with pytest.raises(SystemExit):
         sx.apply(p, m)
@@ -120,7 +165,7 @@ def test_apply_refuses_unknown_category(tmp_path, monkeypatch):
 
 def test_apply_refuses_invalid_name_without_writing(tmp_path, monkeypatch):
     cat_path, p, m = _scratch(tmp_path, monkeypatch, [("Tall Snatch", 3)],
-                              {"Tall Snatch": {"name": "Tall/High Snatch", "category": "Olympic Lifts"}})
+                              {"Tall Snatch": {"name": "Tall/High Snatch", "category": "Olympic Derivatives"}})
     before = cat_path.read_text()
     with pytest.raises(SystemExit):
         sx.apply(p, m)
@@ -135,9 +180,20 @@ def test_validate_flags_bad_one_rm_base():
     assert "Ghost Lift" in errs and "Moon Lift" in errs and "Hang Snatch" not in errs
 
 
+def test_validate_flags_bad_reference_lifts_and_alias_clash():
+    cat = {"categories": [{"label": "X", "kind": "muscle_group", "exercises": ["Leg, Quads", "Arms, Biceps"]},
+                          {"label": "Y", "kind": "cardio", "exercises": ["Row"]}],
+           "one_rm_lifts": ["Back Squat"],
+           "one_rm_reference": {"Leg, Quads": ["Back Squat", "Moon Squat"], "Ghost Group": ["Back Squat"]},
+           "aliases": {"curls": "Arms, Biceps", "CURLS": "Leg, Quads", "Curl; Hammer": "Arms, Biceps"}}
+    errs = "\n".join(sx.problems(cat))
+    assert "';'" in errs
+    assert "Moon Squat" in errs and "Ghost Group" in errs and "'cardio'" in errs and "clashes" in errs
+
+
 def test_apply_records_one_rm_base(tmp_path, monkeypatch):
     cat_path, p, m = _scratch(tmp_path, monkeypatch, [("Tall Snatch", 3)],
-                              {"Tall Snatch": {"name": "Tall Snatch", "category": "Olympic Lifts",
+                              {"Tall Snatch": {"name": "Tall Snatch", "category": "Olympic Derivatives",
                                                "one_rm_base": "Snatch"}})
     sx.apply(p, m)
     assert sx.load()["one_rm_base"]["Tall Snatch"] == "Snatch"

@@ -24,7 +24,6 @@ PIPELINE_LAYERS = [
     ("workout_metrics", "workout_metrics", "Layer 2 - per-session metrics"),
     ("spc_rolling_averages", "spc_rolling_averages", "Layer 3 - rolling averages"),
     ("spc_charts", "spc_charts", "Layer 4 - SPC control limits"),
-    ("training_goals", "training_goals", "Config - declared training goals"),
     ("exercise_taxonomy", "exercise_taxonomy", "Config - exercise taxonomy"),
     ("rpe_calibration", "rpe_calibration", "Layer 6 - RPE calibration"),
     ("plateau_detection", "plateau_detection", "Layer 7 - plateau detection"),

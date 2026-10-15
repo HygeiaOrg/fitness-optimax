@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import OneRepMaxPanel from '../components/OneRepMaxPanel'
+import RpeScale from '../components/RpeScale'
 import { fetchOneRepMaxes, logWorkout, saveOneRepMax } from '../services/api'
-import { EXERCISE_CATEGORIES, baseLiftFor, usesOneRm, weightAtPercent } from '../data/exercises'
+import { DEFAULT_ATHLETE, EXERCISE_CATEGORIES, oneRmLiftsFor, weightAtPercent } from '../data/exercises'
 import './LogWorkout.css'
 
 export default function LogWorkout() {
@@ -12,7 +13,7 @@ export default function LogWorkout() {
   const [error, setError] = useState(null)
   
   const [formData, setFormData] = useState({
-    athlete_name: 'John Hartley', // Default for now
+    athlete_name: DEFAULT_ATHLETE,
     exercise_group: '',
     sets: '',
     total_reps: '',
@@ -26,6 +27,8 @@ export default function LogWorkout() {
   const [oneRmLoadError, setOneRmLoadError] = useState(null)
   const [percent, setPercent] = useState('')
   const [weightAuto, setWeightAuto] = useState(true)
+  // Which 1RM a muscle group's % is taken from ("Leg, Quads" → Back or Front Squat).
+  const [chosenLift, setChosenLift] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -35,7 +38,8 @@ export default function LogWorkout() {
     return () => { cancelled = true }
   }, [formData.athlete_name])
 
-  const baseLift = formData.exercise_group ? baseLiftFor(formData.exercise_group) : null
+  const liftOptions = formData.exercise_group ? oneRmLiftsFor(formData.exercise_group) : []
+  const baseLift = liftOptions.includes(chosenLift) ? chosenLift : (liftOptions[0] || null)
   const oneRm = baseLift ? oneRms[baseLift] : undefined
 
   // Total Weight is session volume: kg on the bar × total reps.
@@ -52,6 +56,7 @@ export default function LogWorkout() {
     const { name, value } = e.target
     if (name === 'exercise_group') {
       setPercent('')
+      setChosenLift(null)
       setFormData(prev => (weightAuto ? { ...prev, exercise_group: value, total_weight: '' } : { ...prev, exercise_group: value }))
       return
     }
@@ -63,6 +68,15 @@ export default function LogWorkout() {
     setPercent(value)
     setWeightAuto(true)
     setFormData(prev => autoTotal(prev, value, oneRm, true))
+  }
+
+  const handleLiftChange = (lift) => {
+    setChosenLift(lift)
+    setFormData(prev => autoTotal(prev, percent, oneRms[lift], weightAuto))
+  }
+
+  const handleRpeChange = (value) => {
+    setFormData(prev => ({ ...prev, rpe: value }))
   }
 
   const handleSaveOneRm = async (lift, kg) => {
@@ -110,7 +124,7 @@ export default function LogWorkout() {
       <Header 
         title="Log Workout" 
         backTo="/"
-        subtitle="Record your session data"
+        subtitle="Olympic lifts & muscle groups"
       />
 
       <main className="log-workout-main">
@@ -118,7 +132,7 @@ export default function LogWorkout() {
           {error && <div className="form-error">{error}</div>}
           
           <div className="form-group">
-            <label htmlFor="exercise_group">Exercise</label>
+            <label htmlFor="exercise_group">Lift or muscle group</label>
             <select
               id="exercise_group"
               name="exercise_group"
@@ -138,11 +152,13 @@ export default function LogWorkout() {
             </select>
           </div>
 
-          {formData.exercise_group && usesOneRm(formData.exercise_group) && (
+          {formData.exercise_group && (
             <OneRepMaxPanel
-              key={formData.exercise_group}
+              key={`${formData.exercise_group}|${baseLift}`}
               exercise={formData.exercise_group}
               baseLift={baseLift}
+              liftOptions={liftOptions}
+              onLiftChange={handleLiftChange}
               oneRm={oneRm}
               percent={percent}
               onPercentChange={handlePercentChange}
@@ -213,19 +229,8 @@ export default function LogWorkout() {
           </div>
           
           <div className="form-group">
-            <label htmlFor="rpe">RPE (1-10)</label>
-            <input 
-              type="number" 
-              id="rpe" 
-              name="rpe" 
-              min="1"
-              max="10"
-              placeholder="Rate of Perceived Exertion"
-              value={formData.rpe}
-              onChange={handleChange}
-              required
-            />
-            <small className="form-help">10 = Absolute maximum effort</small>
+            <span className="form-label">RPE · how hard was your top set?</span>
+            <RpeScale value={formData.rpe} onChange={handleRpeChange} />
           </div>
           
           <button 

@@ -1,6 +1,7 @@
 -- Layer 5: workout_targets
 -- Generates next-session targets and actionable alerts per exercise group,
--- driven by training goal, calibrated RPE trends, rolling averages, and plateau detection.
+-- driven by calibrated RPE trends, rolling averages, and plateau detection.
+-- Strength is the only training objective: low reps (1-5 per set), load first.
 
 CREATE OR REPLACE VIEW `gen-lang-client-0937519537.Optimmax.workout_targets` AS
 WITH base_data AS (
@@ -8,8 +9,7 @@ WITH base_data AS (
     c.*,
     cal.calibrated_rpe,
     cal.rpe_confidence,
-    plat.is_plateau,
-    COALESCE(tg.training_goal, 'HYPERTROPHY') AS training_goal
+    plat.is_plateau
   FROM
     `gen-lang-client-0937519537.Optimmax.spc_charts` c
   LEFT JOIN
@@ -18,9 +18,6 @@ WITH base_data AS (
   LEFT JOIN
     `gen-lang-client-0937519537.Optimmax.plateau_detection` plat
     ON c.exercise_group = plat.exercise_group AND c.session_rank = plat.session_rank
-  LEFT JOIN
-    `gen-lang-client-0937519537.Optimmax.training_goals` tg
-    ON c.exercise_group = tg.exercise_group
 ),
 with_trends AS (
   SELECT
@@ -52,49 +49,40 @@ with_trends AS (
     ROUND(AVG(sets) OVER (
       PARTITION BY exercise_group ORDER BY session_rank
       ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
-    )) AS target_sets_baseline
+    )) AS target_sets_baseline,
+    -- Estimated 1RM (Epley) from the session's average kg per rep and reps per
+    -- set. Beyond 12 reps a set the estimate is too loose to be useful.
+    CASE
+      WHEN avg_reps_per_set > 0 AND avg_reps_per_set <= 12
+      THEN avg_weight_per_rep * (1 + avg_reps_per_set / 30)
+    END AS session_estimated_1rm
   FROM base_data
+),
+with_best AS (
+  SELECT
+    *,
+    MAX(session_estimated_1rm) OVER (PARTITION BY exercise_group) AS best_estimated_1rm
+  FROM with_trends
 ),
 latest_only AS (
   SELECT *
-  FROM with_trends
+  FROM with_best
   WHERE session_rank = latest_session_rank
 ),
 decision_matrix AS (
   SELECT
     *,
-    -- Goal-Aware Decision Logic
+    -- Strength decision logic (RPE on the 0-10 scale, 10 = nothing left)
     CASE
       WHEN is_plateau = TRUE THEN 'REVIEW_REQUIRED'
       WHEN is_out_of_control = TRUE THEN 'REVIEW_REQUIRED'
-
-      -- STRENGTH GOAL
-      WHEN training_goal = 'STRENGTH' THEN
-        CASE
-          WHEN rpe_avg_3 <= 2.5 THEN 'INCREASE_LOAD'
-          WHEN rpe_avg_3 <= 3.5 THEN 'SLIGHT_INCREASE'
-          WHEN rpe_avg_3 <= 4.5 AND avg_reps_per_set <= 5 THEN 'MAINTAIN'
-          WHEN rpe_avg_3 <= 4.5 AND avg_reps_per_set > 5 THEN 'NUDGE_REDUCE_REPS'
-          WHEN rpe_avg_3 > 4.5 AND avg_reps_per_set <= 2 THEN 'MAINTAIN'
-          WHEN rpe_avg_3 > 4.5 AND avg_reps_per_set <= 5 THEN 'MICRO_INCREASE'
-          WHEN rpe_avg_3 > 4.5 AND avg_reps_per_set > 5 THEN 'NUDGE_REDUCE_REPS'
-          ELSE 'MAINTAIN'
-        END
-
-      -- HYPERTROPHY GOAL
-      WHEN training_goal = 'HYPERTROPHY' THEN
-        CASE
-          WHEN rpe_avg_3 <= 2.5 THEN 'INCREASE_LOAD'
-          WHEN rpe_avg_3 <= 3.5 AND avg_reps_per_set >= 8 AND avg_reps_per_set <= 15 THEN 'MAINTAIN'
-          WHEN rpe_avg_3 <= 3.5 AND avg_reps_per_set < 8 THEN 'NUDGE_INCREASE_REPS'
-          WHEN rpe_avg_3 <= 4.5 AND avg_reps_per_set >= 8 AND avg_reps_per_set <= 15 THEN 'SLIGHT_INCREASE'
-          WHEN rpe_avg_3 <= 4.5 AND avg_reps_per_set < 8 THEN 'NUDGE_INCREASE_REPS'
-          WHEN rpe_avg_3 > 4.5 AND avg_reps_per_set <= 2 THEN 'NUDGE_INCREASE_REPS_SIGNIFICANTLY'
-          WHEN rpe_avg_3 > 4.5 AND avg_reps_per_set <= 7 THEN 'NUDGE_INCREASE_REPS'
-          WHEN rpe_avg_3 > 4.5 AND avg_reps_per_set <= 15 THEN 'MICRO_INCREASE'
-          WHEN rpe_avg_3 > 4.5 AND avg_reps_per_set > 15 THEN 'INCREASE_LOAD'
-          ELSE 'MAINTAIN'
-        END
+      WHEN rpe_avg_3 <= 7.5 THEN 'INCREASE_LOAD'
+      WHEN rpe_avg_3 <= 8.5 THEN 'SLIGHT_INCREASE'
+      WHEN rpe_avg_3 <= 9.5 AND avg_reps_per_set <= 5 THEN 'MAINTAIN'
+      WHEN rpe_avg_3 <= 9.5 AND avg_reps_per_set > 5 THEN 'NUDGE_REDUCE_REPS'
+      WHEN rpe_avg_3 > 9.5 AND avg_reps_per_set <= 2 THEN 'MAINTAIN'
+      WHEN rpe_avg_3 > 9.5 AND avg_reps_per_set <= 5 THEN 'MICRO_INCREASE'
+      WHEN rpe_avg_3 > 9.5 AND avg_reps_per_set > 5 THEN 'NUDGE_REDUCE_REPS'
       ELSE 'MAINTAIN'
     END AS logic_decision
   FROM latest_only
@@ -107,16 +95,14 @@ targets_calc AS (
       WHEN logic_decision = 'INCREASE_LOAD' THEN 1.05
       WHEN logic_decision = 'SLIGHT_INCREASE' THEN 1.025
       WHEN logic_decision = 'MICRO_INCREASE' THEN 1.01
-      WHEN logic_decision IN ('NUDGE_REDUCE_REPS') THEN 1.05
-      WHEN logic_decision IN ('NUDGE_INCREASE_REPS') THEN 0.95
-      WHEN logic_decision IN ('NUDGE_INCREASE_REPS_SIGNIFICANTLY') THEN 0.85
+      WHEN logic_decision = 'NUDGE_REDUCE_REPS' THEN 1.05
       ELSE 1.0
     END AS weight_multiplier,
 
     -- Target Reps adjustments
     CASE
-      WHEN logic_decision IN ('NUDGE_REDUCE_REPS') THEN LEAST(5.0, target_reps_baseline)
-      WHEN logic_decision IN ('NUDGE_INCREASE_REPS', 'NUDGE_INCREASE_REPS_SIGNIFICANTLY') THEN GREATEST(8.0, target_reps_baseline)
+      -- Total reps for the session: cap at 5 per set.
+      WHEN logic_decision = 'NUDGE_REDUCE_REPS' THEN LEAST(5.0 * target_sets_baseline, target_reps_baseline)
       ELSE target_reps_baseline
     END AS target_reps,
 
@@ -128,17 +114,17 @@ targets_calc AS (
 final_calc AS (
   SELECT
     *,
-    rolling_avg_5 * weight_multiplier AS target_total_weight,
-    -- Determine target weight per rep
-    (rolling_avg_5 * weight_multiplier) / NULLIF(target_reps, 0) AS target_weight_per_rep,
-    
-    -- Goal Alignment
+    -- Fewer reps: progress the bar weight, not the session volume, otherwise
+    -- the same tonnage over fewer reps would demand an unrealistic jump.
     CASE
-      WHEN training_goal = 'STRENGTH' AND avg_reps_per_set > 8 THEN FALSE
-      WHEN training_goal = 'HYPERTROPHY' AND avg_reps_per_set < 6 THEN FALSE
-      ELSE TRUE
-    END AS goal_aligned,
-    
+      WHEN logic_decision = 'NUDGE_REDUCE_REPS' THEN avg_weight_per_rep * weight_multiplier * target_reps
+      ELSE rolling_avg_5 * weight_multiplier
+    END AS target_total_weight,
+    CASE
+      WHEN logic_decision = 'NUDGE_REDUCE_REPS' THEN avg_weight_per_rep * weight_multiplier
+      ELSE (rolling_avg_5 * weight_multiplier) / NULLIF(target_reps, 0)
+    END AS target_weight_per_rep,
+
     -- Staleness
     (days_since_last_session > 14) AS staleness_alert
   FROM targets_calc
@@ -147,7 +133,6 @@ final_calc AS (
 -- `is_plateau` arrives via a LEFT JOIN and `avg_reps_per_set` divides by sets.
 SELECT
   exercise_group,
-  COALESCE(training_goal, 'HYPERTROPHY') AS training_goal,
   workout_date AS last_session_date,
   days_since_last_session,
   COALESCE(staleness_alert, FALSE) AS staleness_alert,
@@ -169,16 +154,16 @@ SELECT
     WHEN logic_decision = 'INCREASE_LOAD' THEN 'Great capacity! Increase load by 5-10%.'
     WHEN logic_decision = 'SLIGHT_INCREASE' THEN 'Room for overload. Increase load by 2.5-5%.'
     WHEN logic_decision = 'MICRO_INCREASE' THEN 'Failed with volume. Micro increase 1-2.5%.'
-    WHEN logic_decision = 'NUDGE_REDUCE_REPS' THEN 'Too many reps for strength goal. Increase weight and lower reps (1-5).'
-    WHEN logic_decision = 'NUDGE_INCREASE_REPS' THEN 'Too heavy for hypertrophy. Reduce weight and aim for 8-15 reps.'
-    WHEN logic_decision = 'NUDGE_INCREASE_REPS_SIGNIFICANTLY' THEN 'Maxing out at low reps builds strength, not size. Reduce weight significantly.'
+    WHEN logic_decision = 'NUDGE_REDUCE_REPS' THEN 'Too many reps for strength. Increase weight and lower reps (1-5 per set).'
     WHEN is_out_of_control = TRUE THEN 'Process shift detected (Nelson Rule). Review required.'
     ELSE 'Maintain optimal training stimulus.'
   END AS alert_message,
   
-  COALESCE(goal_aligned, TRUE) AS goal_aligned,
   target_total_weight,
   CAST(target_sets AS INT64) AS target_sets,
   CAST(target_reps AS INT64) AS target_reps,
-  target_weight_per_rep
+  target_weight_per_rep,
+  avg_weight_per_rep AS last_avg_weight_per_rep,
+  session_estimated_1rm AS estimated_1rm,
+  best_estimated_1rm
 FROM final_calc;

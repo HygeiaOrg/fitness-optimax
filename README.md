@@ -16,7 +16,7 @@ The system is built on a 3-tier architecture:
    - Built with pure CSS (`index.css`, `App.css`) and responsive components.
    - Visualizations powered by Apache ECharts.
 2. **Backend**: FastAPI (Python).
-   - Serves the unified API layer (`/api/targets`, `/api/charts`, `/api/goals`, `/api/workouts`).
+   - Serves the unified API layer (`/api/targets`, `/api/charts`, `/api/workouts`, `/api/one-rep-maxes`).
    - Dynamically mounts and serves the compiled React frontend for unified deployment.
 3. **Database**: Google BigQuery.
    - A multi-layered SQL pipeline containing views for metric calculation, SPC control limits (Zone A/B), and actionable alert generation.
@@ -88,7 +88,7 @@ gcloud run deploy fitness-optimax --source . \
 North Tyneside Barbells publish a new programme spreadsheet each month into the Drive folder **Olympic Weight Training**. A scheduled Claude task, "Fitness OptiMax programme sync", checks that folder at 06:59 on the 1st of each month. It can also be started at any time from a Claude chat ("run the Fitness OptiMax programme sync"). When it finds a new or changed spreadsheet it:
 
 1. exports it as `.xlsx` and runs `python scripts/sync_exercises.py diff <file>`;
-2. for any exercise not yet in `frontend/src/data/exercises.json`, picks a catalogue name (INITCAP-safe, no `/`), a category and, where the programme gives the % "of" another lift, a `one_rm_base`, then runs `apply` with that mapping;
+2. for any exercise not yet covered by `frontend/src/data/exercises.json`: an Olympic lift or derivative gets its own catalogue name (INITCAP-safe, no `/`) in "Olympic Derivatives" and, where the programme gives the % "of" another lift, a `one_rm_base`; anything else is mapped onto the muscle group it trains (e.g. Zercher Squat → `Leg, Quads`). It then runs `apply` with that mapping, which also regenerates the exercise map in `sql/01_stg_workouts.sql`;
 3. has a reviewer sub-agent check the diff, opens a PR, and merges it once CI is green, which deploys it;
 4. records the file in `config/processed_programmes.json` so it is not processed twice.
 
@@ -98,11 +98,17 @@ Programme spellings that differ from catalogue names (e.g. "SA Row" → "Single 
 
 ## 📊 Features
 
+**Scope: strength only.** This iteration tracks strength gains and nothing else; there are no per-exercise training objectives.
+
+- **What you can log and see**: the Olympic lifts (Snatch, Clean & Jerk), their derivatives (Hang Snatch, Power Clean, pulls, …), and everything else grouped by the muscle groups used on the original data capture sheet (`Leg, Quads`, `Upper Body, Chest`, `Arms, Biceps`, …). The dashboard is laid out in those sections. Older entries logged under a specific accessory ("Back Squat", "Bench Press") or an old sheet value ("Olympic, Snatch") are rolled up into their catalogue entry by `stg_workouts`; names outside the catalogue are left out. The map lives in `aliases` in `exercises.json`; after editing it run `python scripts/sync_exercises.py sql` (CI's `validate` fails if the SQL is out of step).
+- **One rep max**: each exercise page shows your recorded 1RM for the lift it is based on (muscle groups offer reference lifts, e.g. `Leg, Quads` → Back Squat / Front Squat) next to an estimated 1RM from your logged sessions (Epley), plus a % of 1RM table with strength zones and where your next target sits. Dashboard cards show each target as a % of 1RM.
+- **RPE scale**: RPE is recorded on the 0–10 scale, read by reps in reserve (10 = nothing left, 9 = one more rep, 8 = two more …). The original data capture sheet used 1–5; `stg_workouts` maps that history across (5 → 10, 4 → 9, 3 → 8, 2 → 7, 1 → 6).
+
 - **Progressive Overload Targets**: Auto-generated next-workout targets (Sets, Reps, Weight) based on your rolling averages.
 - **SPC I-Charts**: Beautiful, Interactive Statistical Process Control charts highlighting exactly when your performance breaks outside standard variation limits.
 - **Native Data Entry**: Log your workouts directly from the mobile-responsive UI straight to BigQuery.
 - **% of 1RM Working Weights**: On Log Workout, pick an exercise and a working % (50–110%) and the app shows the kg on the bar from your recorded 1RM, then fills Total Weight (kg × total reps). Variations use their base lift's 1RM, as the club programme does ("Snatch High Pull 80–90% of Snatch") — see `one_rm_lifts` / `one_rm_base` in `exercises.json`. 1RMs are stored per athlete in the `one_rep_maxes` table (`GET`/`POST /api/one-rep-maxes`); history is kept and the newest entry counts.
-- **RPE Calibration**: Workouts are weighted by your Rate of Perceived Exertion.
+- **RPE Calibration**: Your RPE history is calibrated against what you actually lifted next session, and drives the load recommendation.
 
 ---
 

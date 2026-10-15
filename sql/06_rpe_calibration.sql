@@ -33,18 +33,19 @@ with_outcome AS (
     CASE
       -- No previous RPE to evaluate
       WHEN prev_rpe IS NULL THEN NULL
-      -- Low RPE (<=2): accurate if weight increased, under-reported if it didn't
-      WHEN prev_rpe <= 2 AND total_weight > prev_total_weight THEN 'ACCURATE'
-      WHEN prev_rpe <= 2 AND total_weight <= prev_total_weight THEN 'UNDER_REPORTED'
-      -- Moderate RPE (3): conservative if weight increased, accurate if maintained
-      WHEN prev_rpe = 3 AND total_weight > prev_total_weight * 1.025 THEN 'UNDER_REPORTED'
-      WHEN prev_rpe = 3 THEN 'ACCURATE'
-      -- Target RPE (4): accurate if maintained, under-reported if decreased
-      WHEN prev_rpe = 4 AND total_weight < prev_total_weight * 0.975 THEN 'UNDER_REPORTED'
-      WHEN prev_rpe = 4 THEN 'ACCURATE'
-      -- High RPE (5): over-reported if weight increased, accurate otherwise
-      WHEN prev_rpe = 5 AND total_weight > prev_total_weight * 1.025 THEN 'OVER_REPORTED'
-      WHEN prev_rpe = 5 THEN 'ACCURATE'
+      -- RPE on the 0-10 scale (10 = nothing left).
+      -- Easy (<=7, 3+ reps left): accurate if weight increased, under-reported if it didn't
+      WHEN prev_rpe <= 7 AND total_weight > prev_total_weight THEN 'ACCURATE'
+      WHEN prev_rpe <= 7 AND total_weight <= prev_total_weight THEN 'UNDER_REPORTED'
+      -- Moderate (8, 2 reps left): conservative if weight increased, accurate if maintained
+      WHEN prev_rpe = 8 AND total_weight > prev_total_weight * 1.025 THEN 'UNDER_REPORTED'
+      WHEN prev_rpe = 8 THEN 'ACCURATE'
+      -- Target (9, 1 rep left): accurate if maintained, under-reported if decreased
+      WHEN prev_rpe = 9 AND total_weight < prev_total_weight * 0.975 THEN 'UNDER_REPORTED'
+      WHEN prev_rpe = 9 THEN 'ACCURATE'
+      -- Max (10, nothing left): over-reported if weight increased, accurate otherwise
+      WHEN prev_rpe = 10 AND total_weight > prev_total_weight * 1.025 THEN 'OVER_REPORTED'
+      WHEN prev_rpe = 10 THEN 'ACCURATE'
       ELSE 'ACCURATE'
     END AS rpe_outcome
   FROM with_next_session

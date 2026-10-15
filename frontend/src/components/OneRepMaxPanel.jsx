@@ -6,7 +6,7 @@ import './OneRepMaxPanel.css'
  * Shows the athlete's 1RM for the lift an exercise is based on, lets them
  * record or update it, and offers a % of 1RM picker that turns into kg.
  */
-export default function OneRepMaxPanel({ exercise, baseLift, oneRm, percent, onPercentChange, onSaveOneRm, loadError }) {
+export default function OneRepMaxPanel({ exercise, baseLift, liftOptions = [], onLiftChange, oneRm, percent, onPercentChange, onSaveOneRm, loadError }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const [saving, setSaving] = useState(false)
@@ -43,8 +43,17 @@ export default function OneRepMaxPanel({ exercise, baseLift, oneRm, percent, onP
     <section className="orm-panel" aria-label="Percentage of one rep max">
       <div className="orm-head">
         <span className="orm-title">% of 1RM</span>
-        {baseLift !== exercise && <span className="orm-based">based on your {baseLift} 1RM</span>}
+        {baseLift !== exercise && liftOptions.length <= 1 && <span className="orm-based">based on your {baseLift} 1RM</span>}
       </div>
+
+      {liftOptions.length > 1 && (
+        <div className="form-group">
+          <label htmlFor="orm-lift">Based on your 1RM for</label>
+          <select id="orm-lift" className="form-select" value={baseLift} onChange={e => onLiftChange(e.target.value)}>
+            {liftOptions.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+        </div>
+      )}
 
       {showInput ? (
         <div className="orm-edit">

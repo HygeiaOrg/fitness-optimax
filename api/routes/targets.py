@@ -33,7 +33,6 @@ def get_workout_targets(bq: BQClient = Depends(get_bq_client)):
         try:
             targets.append(TargetResponse(
                 exercise_group=rows.as_str(row, "exercise_group"),
-                training_goal=rows.as_str(row, "training_goal", "HYPERTROPHY"),
                 last_session_date=rows.as_date(row, "last_session_date"),
                 days_since_last_session=rows.as_int(row, "days_since_last_session"),
                 staleness_alert=rows.as_bool(row, "staleness_alert"),
@@ -44,11 +43,13 @@ def get_workout_targets(bq: BQClient = Depends(get_bq_client)):
                 is_plateau=rows.as_bool(row, "is_plateau"),
                 alert_type=rows.as_str(row, "alert_type", "MAINTAIN"),
                 alert_message=rows.as_str(row, "alert_message"),
-                goal_aligned=rows.as_bool(row, "goal_aligned", True),
                 target_total_weight=rows.as_float(row, "target_total_weight"),
                 target_sets=rows.as_int(row, "target_sets"),
                 target_reps=rows.as_int(row, "target_reps"),
                 target_weight_per_rep=rows.as_float(row, "target_weight_per_rep"),
+                last_avg_weight_per_rep=rows.as_float(row, "last_avg_weight_per_rep"),
+                estimated_1rm=rows.as_float(row, "estimated_1rm"),
+                best_estimated_1rm=rows.as_float(row, "best_estimated_1rm"),
             ))
         except ValidationError as exc:
             # One unusable row should never blank the whole dashboard.

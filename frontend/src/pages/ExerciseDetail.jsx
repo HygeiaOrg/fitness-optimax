@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import SummaryStats from '../components/SummaryStats'
 import SPCChart from '../components/SPCChart'
-import GoalToggle from '../components/GoalToggle'
 import AlertBadge from '../components/AlertBadge'
-import { fetchChartData, fetchTargets } from '../services/api'
+import StrengthPanel from '../components/StrengthPanel'
+import { fetchChartData, fetchOneRepMaxes, fetchTargets } from '../services/api'
+import { DEFAULT_ATHLETE, categoryFor } from '../data/exercises'
 import './ExerciseDetail.css'
 
 export default function ExerciseDetail() {
@@ -15,6 +16,7 @@ export default function ExerciseDetail() {
   
   const [chartData, setChartData] = useState(null)
   const [targetData, setTargetData] = useState(null)
+  const [oneRms, setOneRms] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -40,30 +42,28 @@ export default function ExerciseDetail() {
     loadData()
   }, [decodedGroup])
 
-  const handleGoalChange = (newGoal) => {
-    if (targetData) {
-      setTargetData({ ...targetData, training_goal: newGoal })
-    }
-  }
+  // 1RMs are context, not essential: the page still works without them.
+  useEffect(() => {
+    let cancelled = false
+    fetchOneRepMaxes(DEFAULT_ATHLETE)
+      .then(map => { if (!cancelled) setOneRms(map) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  const category = categoryFor(decodedGroup)
+  // BigQuery hands the group back INITCAP'd; use the catalogue's spelling for 1RM lookups.
+  const exerciseName = category?.exercises.find(e => e.toLowerCase() === decodedGroup.toLowerCase()) || decodedGroup
 
   return (
     <div className="exercise-detail-page animate-fade-in">
       <Header 
         title={decodedGroup} 
         backTo="/"
-        subtitle={targetData ? `${targetData.target_sets} sets × ${targetData.target_reps} reps` : ''}
+        subtitle={category ? category.label : ''}
       />
 
       <main className="exercise-detail-main">
-        <div className="exercise-header-actions">
-          {targetData && (
-            <GoalToggle 
-              exerciseGroup={decodedGroup} 
-              initialGoal={targetData.training_goal}
-              onGoalChange={handleGoalChange}
-            />
-          )}
-        </div>
 
         {loading && (
           <div className="detail-loading">
@@ -110,14 +110,19 @@ export default function ExerciseDetail() {
                   <div className="exercise-insight-card">
                     <div className="insight-header">
                       <AlertBadge alertType={targetData.alert_type} />
-                      {targetData.goal_aligned && <span className="insight-aligned">✓ Goal Aligned</span>}
                     </div>
                     <h3 className="insight-message">{targetData.alert_message}</h3>
-                    <p className="insight-target">
-                      Target: <strong>{targetData.target_weight_per_rep.toFixed(1)} kg</strong> for {targetData.target_sets} × {targetData.target_reps}
-                    </p>
+                    {typeof targetData.target_weight_per_rep === 'number' && (
+                      <p className="insight-target">
+                        Target: <strong>{targetData.target_weight_per_rep.toFixed(1)} kg</strong> {targetData.target_sets > 0 && targetData.target_reps > 0 && (
+                          <> for {targetData.target_sets} sets × {Math.round(targetData.target_reps / targetData.target_sets)} reps</>
+                        )}
+                      </p>
+                    )}
                   </div>
                 )}
+
+                <StrengthPanel key={exerciseName} exercise={exerciseName} oneRms={oneRms} target={targetData} />
               </>
             )}
           </>

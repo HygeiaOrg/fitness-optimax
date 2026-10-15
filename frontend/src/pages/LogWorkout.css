@@ -47,7 +47,8 @@
   flex: 1;
 }
 
-label {
+label,
+.form-label {
   font-weight: 700;
   color: var(--text-primary);
   font-size: 0.8rem;

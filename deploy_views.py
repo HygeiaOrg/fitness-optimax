@@ -36,7 +36,6 @@ SQL_FILES = [
     "02_workout_metrics.sql",
     "03_spc_rolling_averages.sql",
     "04_spc_charts.sql",
-    "05a_training_goals_table.sql",
     "05b_exercise_taxonomy_table.sql",
     "06_rpe_calibration.sql",
     "07_plateau_detection.sql",
@@ -49,8 +48,8 @@ def get_client():
     """Create a BigQuery client using gcloud access token.
 
     In CI (GitHub Actions with Workload Identity Federation) use Application
-    Default Credentials with Drive scope as well, because 05a reads the
-    Google-Sheet-backed source table. The sheet must be shared with the
+    Default Credentials with Drive scope as well, because the source table
+    is backed by a Google Sheet. The sheet must be shared with the
     deployer service account.
     """
     if os.environ.get("CI") and os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):

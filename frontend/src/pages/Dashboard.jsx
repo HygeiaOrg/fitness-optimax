@@ -2,14 +2,32 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import TargetCard from '../components/TargetCard'
-import { DIAGNOSTICS_URL, fetchTargets } from '../services/api'
+import { DIAGNOSTICS_URL, fetchOneRepMaxes, fetchTargets } from '../services/api'
+import { DEFAULT_ATHLETE, EXERCISE_CATEGORIES, categoryFor } from '../data/exercises'
 import './Dashboard.css'
+
+/**
+ * Targets in catalogue order: Olympic lifts, their derivatives, then the
+ * muscle groups. Anything outside the catalogue is not part of the
+ * strength-only app and is left out.
+ */
+function groupTargets(targets) {
+  return EXERCISE_CATEGORIES.map(category => {
+    const order = category.exercises.map(e => e.toLowerCase())
+    const items = targets
+      .filter(t => categoryFor(t.exercise_group) === category)
+      .map(t => ({ target: t, exercise: category.exercises[order.indexOf(t.exercise_group.toLowerCase())] }))
+      .sort((a, b) => order.indexOf(a.exercise.toLowerCase()) - order.indexOf(b.exercise.toLowerCase()))
+    return { category, items }
+  }).filter(section => section.items.length > 0)
+}
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const [targets, setTargets] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [oneRms, setOneRms] = useState({})
 
   const loadTargets = useCallback(async () => {
     setLoading(true)
@@ -29,11 +47,23 @@ export default function Dashboard() {
     loadTargets()
   }, [loadTargets])
 
+  // Only used for the % of 1RM badges, so a failure here is not an error.
+  useEffect(() => {
+    let cancelled = false
+    fetchOneRepMaxes(DEFAULT_ATHLETE)
+      .then(map => { if (!cancelled) setOneRms(map) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  const sections = groupTargets(targets)
+  const shown = sections.reduce((n, s) => n + s.items.length, 0)
+
   return (
     <div className="dashboard-page animate-fade-in">
       <Header 
         title="Fitness OptiMax" 
-        subtitle="Progressive Overload Targets" 
+        subtitle="Strength Targets" 
       />
 
       <main className="dashboard-main">
@@ -41,7 +71,7 @@ export default function Dashboard() {
         <div className="dashboard-top-bar">
           <div className="dashboard-top-bar-info">
             <span className="dashboard-top-bar-label">Your Training Targets</span>
-            <span className="dashboard-top-bar-count">{!loading && !error ? `${targets.length} exercise groups` : ''}</span>
+            <span className="dashboard-top-bar-count">{!loading && !error ? `${shown} lifts & muscle groups` : ''}</span>
           </div>
           <button
             id="log-workout-btn"
@@ -81,7 +111,7 @@ export default function Dashboard() {
 
         {!loading && !error && (
           <>
-            {targets.length === 0 ? (
+            {shown === 0 ? (
               <div className="empty-state animate-fade-in">
                 <div className="empty-state-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -93,11 +123,16 @@ export default function Dashboard() {
                 <p>No workout targets found. Complete a session to generate insights.</p>
               </div>
             ) : (
-              <div className="target-grid">
-                {targets.map(target => (
-                  <TargetCard key={target.exercise_group} target={target} />
-                ))}
-              </div>
+              sections.map(({ category, items }) => (
+                <section key={category.label} className="target-section" aria-labelledby={`section-${category.label}`}>
+                  <h2 id={`section-${category.label}`} className="target-section-title">{category.label}</h2>
+                  <div className="target-grid">
+                    {items.map(({ target, exercise }) => (
+                      <TargetCard key={target.exercise_group} target={target} exercise={exercise} oneRms={oneRms} />
+                    ))}
+                  </div>
+                </section>
+              ))
             )}
           </>
         )}

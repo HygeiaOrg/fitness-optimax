@@ -15,7 +15,6 @@ class TargetResponse(BaseModel):
     """
 
     exercise_group: str
-    training_goal: str = "HYPERTROPHY"
     last_session_date: Optional[date] = None
     days_since_last_session: Optional[int] = None
     staleness_alert: bool = False
@@ -26,11 +25,14 @@ class TargetResponse(BaseModel):
     is_plateau: bool = False
     alert_type: str = "MAINTAIN"
     alert_message: str = ""
-    goal_aligned: bool = True
     target_total_weight: Optional[float] = None
     target_sets: Optional[int] = None
     target_reps: Optional[int] = None
     target_weight_per_rep: Optional[float] = None
+    last_avg_weight_per_rep: Optional[float] = None
+    # Epley estimates from logged sessions (latest, and best on record).
+    estimated_1rm: Optional[float] = None
+    best_estimated_1rm: Optional[float] = None
 
 # -----------------
 # Chart Endpoints
@@ -57,18 +59,6 @@ class ChartResponse(BaseModel):
     sessions: List[SessionPoint]
 
 # -----------------
-# Config Endpoints
-# -----------------
-class UpdateGoalRequest(BaseModel):
-    exercise_group: str
-    training_goal: str  # Must be 'STRENGTH' or 'HYPERTROPHY'
-
-class UpdateGoalResponse(BaseModel):
-    message: str
-    exercise_group: str
-    training_goal: str
-
-# -----------------
 # Workout Endpoints
 # -----------------
 class LogWorkoutRequest(BaseModel):
@@ -77,7 +67,9 @@ class LogWorkoutRequest(BaseModel):
     sets: int
     total_reps: int
     total_weight: float
-    rpe: int
+    # RPE on the 1-5 scale used since the original data capture sheet
+    # (1 = very easy, 5 = maximal, nothing left).
+    rpe: int = Field(ge=1, le=5)
 
 class LogWorkoutResponse(BaseModel):
     message: str

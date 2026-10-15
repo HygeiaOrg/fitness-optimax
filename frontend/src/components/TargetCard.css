@@ -50,11 +50,17 @@
   line-height: 1.2;
 }
 
-.target-card-aligned {
-  color: var(--success);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.target-card-pct {
+  flex: none;
+  margin-left: var(--space-sm);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--brand-faint);
+  color: var(--brand);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .target-card-body {

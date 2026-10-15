@@ -69,33 +69,36 @@ def check(name, condition, detail=""):
 
 # --- 1. Fully populated row -------------------------------------------------
 full = FakeRow(dict(
-    exercise_group="Bench Press", training_goal="STRENGTH",
+    exercise_group="Upper Body, Chest",
     last_session_date=datetime.date(2026, 9, 15), days_since_last_session=4,
     staleness_alert=False, last_total_weight=1200.0, rolling_avg_5=1150.0,
     last_avg_reps_per_set=5.0, rpe_avg_3=3.2, is_plateau=False,
     alert_type="SLIGHT_INCREASE", alert_message="Room for overload.",
-    goal_aligned=True, target_total_weight=1178.75, target_sets=4.0,
+    target_total_weight=1178.75, target_sets=4.0,
     target_reps=8.0, target_weight_per_rep=147.3,
+    last_avg_weight_per_rep=60.0, estimated_1rm=70.0, best_estimated_1rm=72.5,
 ))
 use(FakeBQ([full]))
 r = client.get("/api/targets")
 check("full row -> 200", r.status_code == 200, r.text)
 check("float target_sets coerced to int", r.json()[0]["target_sets"] == 4, r.text)
+check("estimated 1RM passed through", r.json()[0]["best_estimated_1rm"] == 72.5, r.text)
+check("no training goal in response", "training_goal" not in r.json()[0], r.text)
 
 # --- 2. NULL-heavy row (the old code 500'd on this) -------------------------
 nulls = FakeRow(dict(
-    exercise_group="Deadlift", training_goal=None, last_session_date=None,
+    exercise_group="Snatch", last_session_date=None,
     days_since_last_session=None, staleness_alert=None, last_total_weight=None,
     rolling_avg_5=None, last_avg_reps_per_set=None, rpe_avg_3=None,
-    is_plateau=None, alert_type=None, alert_message=None, goal_aligned=None,
+    is_plateau=None, alert_type=None, alert_message=None,
     target_total_weight=None, target_sets=None, target_reps=None,
-    target_weight_per_rep=None,
+    target_weight_per_rep=None, estimated_1rm=None, best_estimated_1rm=None,
 ))
 use(FakeBQ([nulls]))
 r = client.get("/api/targets")
 check("all-NULL row -> 200", r.status_code == 200, r.text)
 check("NULL is_plateau defaults to False", r.json()[0]["is_plateau"] is False, r.text)
-check("NULL training_goal defaults", r.json()[0]["training_goal"] == "HYPERTROPHY", r.text)
+check("NULL estimated 1RM stays null", r.json()[0]["estimated_1rm"] is None, r.text)
 
 # --- 3. Row missing columns entirely (view drifted) -------------------------
 use(FakeBQ([FakeRow({"exercise_group": "Squat"})]))
@@ -155,6 +158,11 @@ use(FakeBQ([]))
 r = client.post("/api/workouts", json=dict(athlete_name="John", exercise_group="Bench Press",
                                            sets=4, total_reps=32, total_weight=1200.0, rpe=4))
 check("log workout -> 200", r.status_code == 200, r.text)
+r = client.post("/api/workouts", json=dict(athlete_name="John", exercise_group="Snatch",
+                                           sets=5, total_reps=10, total_weight=700.0, rpe=8))
+check("RPE outside the 1-5 scale -> 422", r.status_code == 422, r.text)
+r = client.get("/api/goals")
+check("training goals endpoint removed", r.status_code in (404, 405), r.text)
 
 use(FakeBQ(error=gexc.BadRequest("Column mismatch")))
 from api.errors import BigQueryQueryError

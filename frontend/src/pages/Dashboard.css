@@ -11,6 +11,19 @@
   padding: var(--space-2xl) var(--space-xl);
 }
 
+.target-section + .target-section {
+  margin-top: var(--space-2xl);
+}
+
+.target-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brand);
+  margin-bottom: var(--space-md);
+}
+
 .target-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

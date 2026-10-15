@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom'
 import AlertBadge from './AlertBadge.jsx'
+import { oneRmLiftsFor } from '../data/exercises'
 import './TargetCard.css'
 
-export default function TargetCard({ target }) {
+export default function TargetCard({ target, exercise, oneRms = {} }) {
   const {
     exercise_group,
     target_weight_per_rep,
     target_sets,
     target_reps,
     alert_type,
-    goal_aligned,
+    best_estimated_1rm,
     staleness_alert,
     days_since_last_session
   } = target
@@ -28,15 +29,22 @@ export default function TargetCard({ target }) {
     ? Math.round(target_reps / target_sets)
     : '—'
 
+  // Target as a % of the athlete's 1RM: a recorded 1RM for the lift this group
+  // is based on, else the best estimate from logged sessions.
+  const liftWithMax = oneRmLiftsFor(exercise || exercise_group).find(l => isNumber(oneRms[l]) && oneRms[l] > 0)
+  const oneRm = liftWithMax ? oneRms[liftWithMax] : (isNumber(best_estimated_1rm) && best_estimated_1rm > 0 ? best_estimated_1rm : null)
+  const percentOfMax = oneRm && isNumber(target_weight_per_rep) ? Math.round((target_weight_per_rep / oneRm) * 100) : null
+
   return (
     <Link to={`/exercise/${encodeURIComponent(exercise_group)}`} className="target-card">
       <div className="target-card-header">
-        <h2 className="target-card-title">{exercise_group}</h2>
-        {goal_aligned && (
-          <span className="target-card-aligned" title="Aligned with your training goal">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M13.3333 4L6.00001 11.3333L2.66667 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+        <h2 className="target-card-title">{exercise || exercise_group}</h2>
+        {percentOfMax !== null && (
+          <span
+            className="target-card-pct"
+            title={liftWithMax ? `Target as a % of your ${liftWithMax} 1RM (${oneRm} kg)` : `Target as a % of your estimated 1RM (${oneRm.toFixed(1)} kg)`}
+          >
+            {percentOfMax}% {liftWithMax ? '1RM' : 'e1RM'}
           </span>
         )}
       </div>

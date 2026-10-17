@@ -37,8 +37,14 @@ g iam service-accounts describe "$SA" >/dev/null 2>&1 || \
   g iam service-accounts create "$SA_NAME" --display-name="GitHub Actions deployer"
 
 echo "==> Project roles (deploy, build, BigQuery views)"
+# roles/storage.bucketViewer: before uploading, `gcloud run deploy --source`
+# lists the project's buckets (storage.buckets.list) to check the run-sources
+# bucket really belongs to this project.
+# It grants bucket metadata only, no object access; object access stays scoped
+# to $BUILD_BUCKET below.
 for role in roles/run.admin roles/cloudbuild.builds.editor roles/serviceusage.serviceUsageConsumer \
-            roles/bigquery.dataEditor roles/bigquery.jobUser roles/logging.viewer; do
+            roles/bigquery.dataEditor roles/bigquery.jobUser roles/logging.viewer \
+            roles/storage.bucketViewer; do
   g projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA" \
     --role="$role" --condition=None >/dev/null
 done
@@ -49,6 +55,15 @@ RUNTIME_SA=$(g run services describe "$SERVICE" --region "$REGION" \
 RUNTIME_SA=${RUNTIME_SA:-"$PROJECT_NUMBER-compute@developer.gserviceaccount.com"}
 echo "    runtime SA: $RUNTIME_SA"
 g iam service-accounts add-iam-policy-binding "$RUNTIME_SA" \
+  --member="serviceAccount:$SA" --role=roles/iam.serviceAccountUser >/dev/null
+
+echo "==> Cloud Build's build service account (runs the source build)"
+# New projects build as the Compute default SA, which may have no roles at all.
+BUILD_SA="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
+g projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$BUILD_SA" \
+  --role=roles/run.builder --condition=None >/dev/null
+# The deployer must be able to act as the build SA, not only the runtime SA.
+g iam service-accounts add-iam-policy-binding "$BUILD_SA" \
   --member="serviceAccount:$SA" --role=roles/iam.serviceAccountUser >/dev/null
 
 echo "==> Artifact Registry repo for source deploys (writer only)"

@@ -1,6 +1,6 @@
 -- Layer 1: stg_workouts
--- Clean, type-cast, and normalize the raw Google Sheets external table.
--- Source: gen-lang-client-0937519537.Optimmax.Fitness OptiMax (external Google Sheet)
+-- Clean, type-cast, and normalize the raw workout data table.
+-- Source: gen-lang-client-0937519537.Optimmax.sheet_workouts (native BigQuery table)
 --
 -- Every cast is SAFE: a single malformed row in the sheet (a stray header, a
 -- half-typed date, a blank line at the bottom) must not fail the whole query and
@@ -32,7 +32,7 @@ WITH sheet_rows AS (
       WHEN SAFE_CAST(string_field_7 AS INT64) BETWEEN 1 AND 5 THEN SAFE_CAST(string_field_7 AS INT64) + 5
     END AS rpe
   FROM
-    `gen-lang-client-0937519537.Optimmax.Fitness OptiMax`
+    `gen-lang-client-0937519537.Optimmax.sheet_workouts`
   WHERE
     string_field_0 != 'Timestamp'
 ),

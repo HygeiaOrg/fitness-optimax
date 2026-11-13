@@ -97,3 +97,52 @@ export async function saveOneRepMax(athleteName, lift, oneRmKg) {
 export async function fetchDiagnostics() {
   return request('/api/diagnostics');
 }
+
+/**
+ * Valid weight_category values per sex_category, for the registration form.
+ * GET /api/athletes/weight-classes
+ */
+export async function fetchWeightClasses() {
+  return request('/api/athletes/weight-classes');
+}
+
+/**
+ * Register a new athlete.
+ * POST /api/athletes
+ */
+export async function registerAthlete(payload) {
+  return request('/api/athletes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+/**
+ * Fetch an athlete's profile by id. Throws with `.status === 404` if the id
+ * is unknown (e.g. deleted, or a stale value left over in localStorage).
+ * GET /api/athletes/:id
+ */
+export async function fetchAthlete(athleteId) {
+  return request(`/api/athletes/${encodeURIComponent(athleteId)}`);
+}
+
+/**
+ * Current consent decisions for an athlete.
+ * GET /api/consents?athlete_id=…
+ */
+export async function fetchConsentStatus(athleteId) {
+  return request(`/api/consents?athlete_id=${encodeURIComponent(athleteId)}`);
+}
+
+/**
+ * Record one consent decision (data_storage or share_logs).
+ * POST /api/consents
+ */
+export async function recordConsent(athleteId, consentType, granted) {
+  return request('/api/consents', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ athlete_id: athleteId, consent_type: consentType, granted })
+  });
+}

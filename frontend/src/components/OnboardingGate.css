@@ -1,0 +1,85 @@
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow-y: auto;
+}
+
+.onboarding-card {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.onboarding-loading {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.onboarding-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.onboarding-form h2 {
+  margin-bottom: calc(-1 * var(--space-sm));
+}
+
+.onboarding-intro {
+  font-size: 0.85rem;
+}
+
+.onboarding-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+}
+
+.onboarding-checkbox input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.onboarding-checkbox span {
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.onboarding-footnote {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.onboarding-submit {
+  padding: var(--space-md);
+  font-size: 1rem;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .onboarding-card {
+    padding: var(--space-xl) var(--space-lg);
+  }
+}

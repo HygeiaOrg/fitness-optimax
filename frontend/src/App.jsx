@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
 import ExerciseDetail from './pages/ExerciseDetail.jsx'
 import LogWorkout from './pages/LogWorkout.jsx'
+import ConsentBanner from './components/ConsentBanner.jsx'
 import './App.css'
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
         <Route path="/exercise/:group" element={<ExerciseDetail />} />
         <Route path="/log" element={<LogWorkout />} />
       </Routes>
+      <ConsentBanner />
     </div>
   )
 }

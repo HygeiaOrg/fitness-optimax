@@ -1,4 +1,7 @@
-from pydantic import BaseModel, Field
+import re
+from enum import Enum
+
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional, List
 from datetime import date, datetime
 
@@ -91,3 +94,106 @@ class SaveOneRepMaxRequest(BaseModel):
     lift: str = Field(min_length=1)
     # World-record territory is ~300 kg; 500 leaves room and still catches typos.
     one_rm_kg: float = Field(gt=0, le=500)
+
+# -----------------
+# Athlete Endpoints (issue #18)
+# -----------------
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+class SexCategory(str, Enum):
+    male = "male"
+    female = "female"
+
+class AgeCategory(str, Enum):
+    under_18 = "under_18"
+    age_18_25 = "18_25"
+    age_26_35 = "26_35"
+    masters_35_plus = "masters_35_plus"
+
+# IWF-style weight classes, keyed by sex_category. The two lists share no
+# values, but a field is still asked for because the lists themselves differ.
+WEIGHT_CLASSES: dict[SexCategory, list[str]] = {
+    SexCategory.male: ["65kg", "75kg", "85kg", "95kg", "110kg", "+110kg"],
+    SexCategory.female: ["53kg", "61kg", "69kg", "77kg", "86kg", "+86kg"],
+}
+
+class RegisterAthleteRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    email: str
+    sex_category: SexCategory
+    age_category: AgeCategory
+    weight_category: str
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, v: str) -> str:
+        return " ".join(v.split())
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not _EMAIL_RE.match(v):
+            raise ValueError("must be a valid email address")
+        return v
+
+    @model_validator(mode="after")
+    def weight_category_matches_sex(self):
+        allowed = WEIGHT_CLASSES[self.sex_category]
+        if self.weight_category not in allowed:
+            raise ValueError(
+                f"weight_category must be one of {allowed} for sex_category={self.sex_category.value}"
+            )
+        return self
+
+class AthleteResponse(BaseModel):
+    athlete_id: str
+    name: str
+    email: str
+    sex_category: SexCategory
+    age_category: AgeCategory
+    weight_category: str
+    created_at: Optional[datetime] = None
+
+class WeightClassesResponse(BaseModel):
+    male: List[str]
+    female: List[str]
+
+# -----------------
+# Consent Endpoints (issue #16)
+# -----------------
+
+# Bump this to re-prompt every athlete, even ones who already consented.
+CURRENT_NOTICE_VERSION = "2026-11-13"
+
+class ConsentType(str, Enum):
+    data_storage = "data_storage"
+    share_logs = "share_logs"
+
+class RecordConsentRequest(BaseModel):
+    athlete_id: str = Field(min_length=1)
+    consent_type: ConsentType
+    granted: bool
+    # Defaults to the current notice; callers shouldn't normally override this.
+    notice_version: str = Field(default=CURRENT_NOTICE_VERSION, min_length=1)
+
+class ConsentRecord(BaseModel):
+    athlete_id: str
+    consent_type: ConsentType
+    granted: bool
+    notice_version: str
+    timestamp: Optional[datetime] = None
+
+class ConsentStatus(BaseModel):
+    consent_type: ConsentType
+    granted: Optional[bool] = None
+    notice_version: Optional[str] = None
+    timestamp: Optional[datetime] = None
+    # True only if granted under CURRENT_NOTICE_VERSION — a bump makes this
+    # False again until the athlete re-consents, which is what re-prompts them.
+    current: bool = False
+
+class ConsentStatusResponse(BaseModel):
+    athlete_id: str
+    notice_version: str
+    consents: List[ConsentStatus]

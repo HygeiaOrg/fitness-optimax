@@ -18,6 +18,7 @@ from google.api_core import exceptions as gexc
 import api.routes.health as health_module
 from api.dependencies import get_bq_client
 from api.main import app
+from api.models import CURRENT_NOTICE_VERSION
 
 
 class FakeRow:
@@ -199,6 +200,84 @@ check("save absurd 1RM -> 422", r.status_code == 422, r.text)
 use(FailingInsert())
 r = client.post("/api/one-rep-maxes", json=dict(athlete_name="John", lift="Snatch", one_rm_kg=100))
 check("failed 1RM insert -> 502", r.status_code == 502, r.text)
+
+# --- 10. Athlete registration (issue #18) ------------------------------------
+valid_athlete = dict(
+    name="Jane Lifter", email="jane@example.com",
+    sex_category="female", age_category="26_35", weight_category="69kg",
+)
+
+use(FakeBQ([]))
+r = client.post("/api/athletes", json=valid_athlete)
+check("register athlete -> 201", r.status_code == 201, r.text)
+check("register athlete returns an athlete_id", bool(r.json().get("athlete_id")), r.text)
+
+r = client.post("/api/athletes", json=dict(valid_athlete, sex_category="male"))
+check("weight class for the wrong sex -> 422", r.status_code == 422, r.text)
+
+r = client.post("/api/athletes", json=dict(valid_athlete, age_category="under_18"))
+check("under-18 registration blocked -> 403", r.status_code == 403, r.text)
+check("under-18 block names a contact path", "contact the club" in r.json()["detail"], r.text)
+
+r = client.post("/api/athletes", json=dict(valid_athlete, email="not-an-email"))
+check("invalid email -> 422", r.status_code == 422, r.text)
+
+r = client.get("/api/athletes/weight-classes")
+check("weight classes -> 200", r.status_code == 200, r.text)
+check("weight classes lists male & female", set(r.json().keys()) == {"male", "female"}, r.text)
+
+use(FakeBQ([FakeRow(dict(
+    athlete_id="abc123", name="Jane Lifter", email="jane@example.com",
+    sex_category="female", age_category="26_35", weight_category="69kg",
+    created_at=datetime.datetime(2026, 11, 13, 12, 0),
+))]))
+r = client.get("/api/athletes/abc123")
+check("get athlete -> 200", r.status_code == 200, r.text)
+check("get athlete returns weight_category", r.json()["weight_category"] == "69kg", r.text)
+
+use(FakeBQ([]))
+r = client.get("/api/athletes/unknown-id")
+check("get unknown athlete -> 404", r.status_code == 404, r.text)
+
+r = client.delete("/api/athletes/unknown-id")
+check("delete unknown athlete -> 404", r.status_code == 404, r.text)
+
+use(FakeBQ([FakeRow(dict(athlete_id="abc123", name="Jane Lifter"))]))
+r = client.delete("/api/athletes/abc123")
+check("delete athlete -> 204", r.status_code == 204, r.text)
+
+# --- 11. Consents (issue #16) -------------------------------------------------
+use(FakeBQ([]))
+r = client.get("/api/consents", params={"athlete_id": "ghost"})
+check("consent status for unknown athlete -> 404", r.status_code == 404, r.text)
+
+r = client.post("/api/consents", json=dict(athlete_id="ghost", consent_type="data_storage", granted=True))
+check("record consent for unknown athlete -> 404", r.status_code == 404, r.text)
+
+use(FakeBQ([FakeRow(dict(athlete_id="abc123"))]))
+r = client.post("/api/consents", json=dict(athlete_id="abc123", consent_type="data_storage", granted=True))
+check("record consent -> 201", r.status_code == 201, r.text)
+check("record consent echoes current notice_version",
+      r.json()["notice_version"] == CURRENT_NOTICE_VERSION, r.text)
+
+use(FakeBQ([FakeRow(dict(
+    consent_type="data_storage", granted=True, notice_version=CURRENT_NOTICE_VERSION,
+    timestamp=datetime.datetime(2026, 11, 13, 12, 0),
+))]))
+r = client.get("/api/consents", params={"athlete_id": "abc123"})
+check("consent status -> 200", r.status_code == 200, r.text)
+by_type = {c["consent_type"]: c for c in r.json()["consents"]}
+check("data_storage granted & current",
+      by_type["data_storage"]["granted"] is True and by_type["data_storage"]["current"] is True, r.text)
+check("share_logs defaults to never-recorded", by_type["share_logs"]["granted"] is None, r.text)
+
+use(FakeBQ([FakeRow(dict(
+    consent_type="data_storage", granted=True, notice_version="2025-01-01",
+    timestamp=datetime.datetime(2025, 1, 1, 9, 0),
+))]))
+r = client.get("/api/consents", params={"athlete_id": "abc123"})
+stale = {c["consent_type"]: c for c in r.json()["consents"]}["data_storage"]
+check("consent on an old notice_version is not current", stale["current"] is False, r.text)
 
 print()
 print("FAILURES:", failures if failures else "none")
